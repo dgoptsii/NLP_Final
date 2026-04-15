@@ -1,22 +1,32 @@
 #!/usr/bin/env python3
 """
-test_dataset_model.py
+evaluate_split_model.py
 
-Quick sanity-check model for final_dataset.csv.
+Evaluate a logistic regression baseline on pre-split phishing datasets.
 
-What it does
-------------
-1. Loads the balanced normalized dataset
-2. Uses only handcrafted numeric/binary features
-3. Splits into train/test
-4. Trains Logistic Regression
-5. Prints accuracy, precision, recall, F1, confusion matrix
+Expected inputs
+---------------
+- processed/splits/train.csv
+- processed/splits/val.csv
+- processed/splits/test.csv
 
-Usage
------
-python test_dataset_model.py \
-  --data "processed/final_dataset.csv" \
-  --random-seed 42
+This script:
+1. Loads existing train/val/test CSV files
+2. Validates required feature columns
+3. Trains Logistic Regression on train only
+4. Evaluates on train / val / test
+5. Prints proper classification metrics:
+   - accuracy
+   - balanced accuracy
+   - precision
+   - recall (sensitivity)
+   - specificity
+   - F1
+   - ROC AUC
+   - PR AUC
+   - Matthews correlation coefficient
+   - confusion matrix
+6. Prints top positive / negative coefficients
 """
 
 from __future__ import annotations
@@ -28,10 +38,16 @@ import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     accuracy_score,
+    average_precision_score,
+    balanced_accuracy_score,
     classification_report,
     confusion_matrix,
+    f1_score,
+    matthews_corrcoef,
+    precision_score,
+    recall_score,
+    roc_auc_score,
 )
-from sklearn.model_selection import train_test_split
 
 
 FEATURE_COLUMNS = [
@@ -45,84 +61,154 @@ FEATURE_COLUMNS = [
     "num_upper_tokens",
     "keyword_hits",
     "num_attachments",
-    # "has_html",
     "has_form_tag",
     "has_script_tag",
     "has_iframe_tag",
-    # "has_embedded_images",
     "has_ip_url",
-    "has_at_in_url",
     "has_external_links",
 ]
 
 
+def load_split(path: Path, split_name: str) -> pd.DataFrame:
+    if not path.exists():
+        raise FileNotFoundError(f"{split_name} file not found: {path}")
+
+    df = pd.read_csv(path)
+
+    required = FEATURE_COLUMNS + ["label", "id", "source", "subject", "text"]
+    missing = [col for col in required if col not in df.columns]
+    if missing:
+        raise ValueError(f"{split_name} is missing required columns: {missing}")
+
+    df["label"] = pd.to_numeric(df["label"], errors="raise").astype(int)
+
+    for col in FEATURE_COLUMNS:
+        df[col] = pd.to_numeric(df[col], errors="raise")
+
+    return df
+
+
+def compute_metrics(y_true, y_pred, y_prob) -> dict:
+    cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
+    tn, fp, fn, tp = cm.ravel()
+
+    specificity = tn / (tn + fp) if (tn + fp) > 0 else 0.0
+
+    return {
+        "accuracy": accuracy_score(y_true, y_pred),
+        "balanced_accuracy": balanced_accuracy_score(y_true, y_pred),
+        "precision": precision_score(y_true, y_pred, zero_division=0),
+        "recall": recall_score(y_true, y_pred, zero_division=0),
+        "specificity": specificity,
+        "f1": f1_score(y_true, y_pred, zero_division=0),
+        "roc_auc": roc_auc_score(y_true, y_prob),
+        "pr_auc": average_precision_score(y_true, y_prob),
+        "mcc": matthews_corrcoef(y_true, y_pred),
+        "confusion_matrix": cm,
+    }
+
+
+def print_dataset_summary(name: str, df: pd.DataFrame) -> None:
+    print(f"{name:5s} rows={len(df):5d}  labels={df['label'].value_counts().sort_index().to_dict()}")
+
+
+def print_metrics_block(name: str, y_true, y_pred, y_prob) -> None:
+    metrics = compute_metrics(y_true, y_pred, y_prob)
+
+    print("\n" + "=" * 60)
+    print(f"{name} METRICS")
+    print("=" * 60)
+    print(f"Accuracy:             {metrics['accuracy']:.4f}")
+    print(f"Balanced accuracy:    {metrics['balanced_accuracy']:.4f}")
+    # print(f"Precision:            {metrics['precision']:.4f}")
+    # print(f"Recall / Sensitivity: {metrics['recall']:.4f}")
+    print(f"Specificity:          {metrics['specificity']:.4f}")
+    print(f"F1 score:             {metrics['f1']:.4f}")
+    # print(f"ROC AUC:              {metrics['roc_auc']:.4f}")
+    # print(f"PR AUC:               {metrics['pr_auc']:.4f}")
+    # print(f"Matthews corrcoef:    {metrics['mcc']:.4f}")
+
+    print("\nClassification report:")
+    print(classification_report(y_true, y_pred, digits=4, zero_division=0))
+
+    print("Confusion matrix:")
+    print(metrics["confusion_matrix"])
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=Path, required=True, help="Path to final_dataset.csv")
+    parser.add_argument("--train", type=Path, required=True, help="Path to train.csv")
+    parser.add_argument("--val", type=Path, required=True, help="Path to val.csv")
+    parser.add_argument("--test", type=Path, required=True, help="Path to test.csv")
     parser.add_argument("--random-seed", type=int, default=42, help="Random seed")
+    parser.add_argument(
+        "--class-weight",
+        type=str,
+        default=None,
+        choices=[None, "balanced"],
+        help="Optional class_weight for LogisticRegression",
+    )
     args = parser.parse_args()
 
-    if not args.data.exists():
-        raise FileNotFoundError(f"Dataset not found: {args.data}")
+    train_df = load_split(args.train, "train")
+    val_df = load_split(args.val, "val")
+    test_df = load_split(args.test, "test")
 
-    df = pd.read_csv(args.data)
+    print("\n" + "=" * 60)
+    print("DATASET SUMMARY")
+    print("=" * 60)
+    print_dataset_summary("TRAIN", train_df)
+    print_dataset_summary("VAL", val_df)
+    print_dataset_summary("TEST", test_df)
 
-    missing = [col for col in FEATURE_COLUMNS + ["label"] if col not in df.columns]
-    if missing:
-        raise ValueError(f"Missing required columns: {missing}")
+    X_train = train_df[FEATURE_COLUMNS].copy()
+    y_train = train_df["label"].copy()
 
-    X = df[FEATURE_COLUMNS].copy()
-    y = df["label"].astype(int)
+    X_val = val_df[FEATURE_COLUMNS].copy()
+    y_val = val_df["label"].copy()
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X,
-        y,
-        test_size=0.2,
-        random_state=args.random_seed,
-        stratify=y,
-    )
+    X_test = test_df[FEATURE_COLUMNS].copy()
+    y_test = test_df["label"].copy()
 
     model = LogisticRegression(
-        max_iter=2000,
+        max_iter=3000,
         random_state=args.random_seed,
+        class_weight=args.class_weight,
     )
     model.fit(X_train, y_train)
 
-    y_pred = model.predict(X_test)
+    train_pred = model.predict(X_train)
+    train_prob = model.predict_proba(X_train)[:, 1]
 
-    print("\n" + "=" * 60)
-    print("DATASET")
-    print("=" * 60)
-    print(f"Rows: {len(df)}")
-    print(f"Train rows: {len(X_train)}")
-    print(f"Test rows: {len(X_test)}")
-    print(f"Label distribution: {y.value_counts().sort_index().to_dict()}")
+    val_pred = model.predict(X_val)
+    val_prob = model.predict_proba(X_val)[:, 1]
 
-    print("\n" + "=" * 60)
-    print("RESULTS")
-    print("=" * 60)
-    print(f"Accuracy: {accuracy_score(y_test, y_pred):.4f}")
+    test_pred = model.predict(X_test)
+    test_prob = model.predict_proba(X_test)[:, 1]
 
-    print("\nClassification report:")
-    print(classification_report(y_test, y_pred, digits=4))
+    print_metrics_block("TRAIN", y_train, train_pred, train_prob)
+    print_metrics_block("VAL", y_val, val_pred, val_prob)
+    print_metrics_block("TEST", y_test, test_pred, test_prob)
 
-    print("Confusion matrix:")
-    print(confusion_matrix(y_test, y_pred))
-
-    coef_df = pd.DataFrame({
-        "feature": FEATURE_COLUMNS,
-        "coefficient": model.coef_[0],
-    }).sort_values("coefficient", ascending=False)
+    coef_df = pd.DataFrame(
+        {
+            "feature": FEATURE_COLUMNS,
+            "coefficient": model.coef_[0],
+            "abs_coefficient": model.coef_[0].copy(),
+        }
+    )
+    coef_df["abs_coefficient"] = coef_df["coefficient"].abs()
+    coef_df = coef_df.sort_values("coefficient", ascending=False)
 
     print("\n" + "=" * 60)
     print("TOP POSITIVE FEATURES FOR PHISHING")
     print("=" * 60)
-    print(coef_df.head(10).to_string(index=False))
+    print(coef_df[["feature", "coefficient"]].head(10).to_string(index=False))
 
     print("\n" + "=" * 60)
     print("TOP NEGATIVE FEATURES FOR PHISHING")
     print("=" * 60)
-    print(coef_df.tail(10).to_string(index=False))
+    print(coef_df[["feature", "coefficient"]].tail(10).to_string(index=False))
 
 
 if __name__ == "__main__":

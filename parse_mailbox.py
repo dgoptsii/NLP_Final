@@ -6,33 +6,15 @@ Reusable mailbox parser for both:
 - Nazario phishing mbox
 - Enron mbox created from create_mailbox.py
 
-What this file does
--------------------
-1. Reads any .mbox file
-2. Extracts subject + best available body text
-3. Handles MIME multipart emails
-4. Converts HTML to plain text
-5. Safely decodes email headers
-6. Computes aligned structural features
-7. Removes duplicates
-8. Saves the result to CSV
-9. Prints detailed parsing and dataset statistics
-
-Usage
------
-# Parse Nazario as phishing
-python parse_mailbox.py \
-    --mbox /path/to/phishing3.mbox \
-    --out /path/to/nazario_parsed.csv \
-    --label 1 \
-    --source nazario
-
-# Parse Enron after converting it to mbox
-python parse_mailbox.py \
-    --mbox /path/to/enron.mbox \
-    --out /path/to/enron_parsed.csv \
-    --label 0 \
-    --source enron
+----------
+1. Read any .mbox file
+2. Extract subject + body safely
+3. Handle MIME multipart emails
+4. Preserve useful phishing evidence from HTML
+5. Compute structural features
+6. Remove near-duplicates more carefully
+7. Save the result to CSV
+8. Print detailed parsing statistics
 """
 
 from __future__ import annotations
@@ -49,39 +31,92 @@ from statistics import mean
 from urllib.parse import urlparse
 
 
+# ============================================================================
+# REGEXES
+# ============================================================================
+
+# Remove inline email-style headers that sometimes appear inside forwarded or
+# quoted message bodies. Example:
+# "From: John Doe"
+# "Subject: Meeting"
 INLINE_HEADER_RE = re.compile(
     r"^(from|to|cc|bcc|subject|date|sent|reply-to|message-id):\s+.*$",
     re.IGNORECASE | re.MULTILINE,
 )
 
+# Remove HTML comments: <!-- ... -->
 COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
-SCRIPT_STYLE_RE = re.compile(r"<(script|style).*?>.*?</\1>", re.IGNORECASE | re.DOTALL)
+
+# Remove entire <script>...</script> and <style>...</style> blocks.
+SCRIPT_STYLE_RE = re.compile(
+    r"<(script|style).*?>.*?</\1>",
+    re.IGNORECASE | re.DOTALL,
+)
+
+# Generic HTML tag remover: <...>
 HTML_TAG_RE = re.compile(r"<[^>]+>")
+
+# Convert <br> and variants into line breaks.
 BR_RE = re.compile(r"<\s*br\s*/?>", re.IGNORECASE)
+
+# Convert closing </p> into line breaks.
 P_RE = re.compile(r"</\s*p\s*>", re.IGNORECASE)
+
+# Remove list tags such as <ul>, <ol>, <li>.
 LIST_TAG_RE = re.compile(r"</?\s*(ul|ol|li)\b[^>]*>", re.IGNORECASE)
+
+# Detect image tags in HTML.
 IMG_RE = re.compile(r"<\s*img\b", re.IGNORECASE)
 
+# Capture useful link-bearing attributes directly from HTML.
+# This helps preserve hidden phishing links even if anchor text looks harmless.
+HREF_RE = re.compile(r'href\s*=\s*["\']([^"\']+)["\']', re.IGNORECASE)
+SRC_RE = re.compile(r'src\s*=\s*["\']([^"\']+)["\']', re.IGNORECASE)
+ACTION_RE = re.compile(r'action\s*=\s*["\']([^"\']+)["\']', re.IGNORECASE)
+
+# Remove quoted reply lines that start with ">".
 QUOTE_RE = re.compile(r"^\s*>.*$", re.MULTILINE)
+
+# Detect common forwarded-message separators.
 FORWARDED_RE = re.compile(
     r"(^[- ]*original message[- ]*$|^begin forwarded message:|^forwarded by )",
     re.IGNORECASE | re.MULTILINE,
 )
+
+# Remove email signatures beginning with the standard "--" separator.
 SIGNATURE_RE = re.compile(r"\n(--\s*\n.*)$", re.DOTALL)
 
+# Collapse repeated whitespace into one space.
 MULTISPACE_RE = re.compile(r"\s+")
+
+# Replace HTML nonbreaking spaces.
 HTML_ENTITY_SPACE_RE = re.compile(r"&nbsp;?", re.IGNORECASE)
 
-URL_RE = re.compile(r"(https?://[^\s<>'\"()]+|www\.[^\s<>'\"()]+)", re.IGNORECASE)
-EMAIL_RE = re.compile(r"\b[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}\b", re.IGNORECASE)
+# Match visible URLs in text.
+URL_RE = re.compile(
+    r"(https?://[^\s<>'\"()]+|www\.[^\s<>'\"()]+)",
+    re.IGNORECASE,
+)
+
+# Match email addresses.
+EMAIL_RE = re.compile(
+    r"\b[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}\b",
+    re.IGNORECASE,
+)
+
+# Match IPv4 addresses.
 IP_RE = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
+
+# Match numbers and numeric patterns.
 NUM_RE = re.compile(r"\b\d+(?:[.,:/-]\d+)*\b")
 
+# Detect URLs where the hostname itself is an IP address.
 IP_URL_RE = re.compile(
     r"https?://(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?(?:/|$)",
     re.IGNORECASE,
 )
 
+# Common phishing-related keywords.
 PHISH_KEYWORDS = {
     "account", "verify", "verification", "suspend", "suspended", "confirm",
     "security", "password", "bank", "login", "update", "urgent", "click",
@@ -91,7 +126,16 @@ PHISH_KEYWORDS = {
 }
 
 
+# ============================================================================
+# SMALL HELPERS
+# ============================================================================
+
 def header_to_str(value) -> str:
+    """
+    Safely convert an email header or payload-like object to a string.
+    - email headers can be encoded in MIME form
+    - some parsed objects are not plain strings
+    """
     if value is None:
         return ""
     if isinstance(value, str):
@@ -105,10 +149,73 @@ def header_to_str(value) -> str:
             return ""
 
 
-def html_to_text(raw_html: str) -> str:
-    # extract URLs BEFORE removing tags
-    urls = URL_RE.findall(raw_html)
-    url_text = " ".join(urls)
+def normalize_url(url: str) -> str:
+    """
+    Normalize a URL so later parsing is more consistent.
+    If it starts with 'www.', prepend 'http://'.
+    """
+    url = header_to_str(url).strip()
+    if not url:
+        return ""
+    if url.lower().startswith("www."):
+        return "http://" + url
+    return url
+
+
+def safe_netloc(url: str) -> str:
+    """
+    Extract the domain / netloc from a URL safely.
+    Returns lowercase hostname-like string, or empty string on failure.
+    """
+    try:
+        netloc = urlparse(url).netloc.lower().strip()
+        return netloc
+    except Exception:
+        return ""
+
+
+# ============================================================================
+# HTML PROCESSING
+# ============================================================================
+
+def extract_links_from_html(raw_html: str) -> list[str]:
+    """
+    Extract href/src/action attribute values from raw HTML.
+    - <a href="...">
+    - <img src="...">
+    - <form action="...">
+    Plain text extraction alone can miss those.
+    """
+    links = []
+    for regex in (HREF_RE, SRC_RE, ACTION_RE):
+        links.extend(regex.findall(raw_html))
+
+    out = []
+    for link in links:
+        link = normalize_url(link)
+        if link:
+            out.append(link)
+    return out
+
+
+def html_to_text_and_links(raw_html: str) -> tuple[str, list[str]]:
+    """
+    Convert HTML into readable text and separately return links extracted from
+    link-bearing attributes.
+
+    Steps:
+    1. collect URLs both from visible text and HTML attributes
+    2. remove comments/scripts/styles
+    3. convert some tags into spaces/newlines
+    4. strip all remaining tags
+    5. unescape HTML entities
+    """
+    if not raw_html:
+        return "", []
+
+    visible_urls = [normalize_url(u) for u in URL_RE.findall(raw_html)]
+    attr_links = extract_links_from_html(raw_html)
+    all_links = [u for u in (visible_urls + attr_links) if u]
 
     text = COMMENT_RE.sub(" ", raw_html)
     text = SCRIPT_STYLE_RE.sub(" ", text)
@@ -117,13 +224,19 @@ def html_to_text(raw_html: str) -> str:
     text = LIST_TAG_RE.sub(" ", text)
     text = HTML_ENTITY_SPACE_RE.sub(" ", text)
     text = HTML_TAG_RE.sub(" ", text)
-
     text = html.unescape(text)
+    text = MULTISPACE_RE.sub(" ", text).strip()
 
-    # append URLs back
-    return (text + " " + url_text).strip()
+    return text, all_links
+
 
 def decode_part(part) -> str:
+    """
+    Decode one MIME part into a string.
+
+    Uses declared charset when available.
+    Falls back to UTF-8 with replacement on errors.
+    """
     payload = part.get_payload(decode=True)
 
     if payload is None:
@@ -137,11 +250,25 @@ def decode_part(part) -> str:
         return payload.decode("utf-8", errors="replace")
 
 
+# ============================================================================
+# MESSAGE EXTRACTION
+# ============================================================================
+
 def extract_subject_body_meta(msg) -> tuple[str, str, dict]:
+    """
+    Extract:
+    - subject
+    - combined body text
+    - metadata flags
+    - extracted links
+
+    If both plain text and HTML are present, we combine them instead of discarding HTML entirely.
+    """
     subject = header_to_str(msg.get("subject", ""))
 
     plain_parts = []
-    html_parts = []
+    html_text_parts = []
+    all_links = []
 
     has_html = 0
     has_form = 0
@@ -155,14 +282,17 @@ def extract_subject_body_meta(msg) -> tuple[str, str, dict]:
             ctype = part.get_content_type()
             disp = (part.get("Content-Disposition") or "").lower()
 
+            # Count explicit attachments and skip their content.
             if "attachment" in disp:
                 num_attachments += 1
                 continue
 
+            # Detect inline/embedded images.
             if ctype.startswith("image/"):
                 has_embedded_images = 1
                 continue
 
+            # Skip application payloads such as PDFs or binaries.
             if ctype.startswith("application/"):
                 continue
 
@@ -174,8 +304,11 @@ def extract_subject_body_meta(msg) -> tuple[str, str, dict]:
             elif ctype == "text/html":
                 raw_html = decode_part(part)
                 if raw_html:
-                    html_parts.append(raw_html)
                     has_html = 1
+                    html_text, html_links = html_to_text_and_links(raw_html)
+                    if html_text:
+                        html_text_parts.append(html_text)
+                    all_links.extend(html_links)
 
                     if re.search(r"<\s*form\b", raw_html, re.IGNORECASE):
                         has_form = 1
@@ -195,8 +328,11 @@ def extract_subject_body_meta(msg) -> tuple[str, str, dict]:
 
         elif ctype == "text/html":
             if payload:
-                html_parts.append(payload)
                 has_html = 1
+                html_text, html_links = html_to_text_and_links(payload)
+                if html_text:
+                    html_text_parts.append(html_text)
+                all_links.extend(html_links)
 
                 if re.search(r"<\s*form\b", payload, re.IGNORECASE):
                     has_form = 1
@@ -207,9 +343,17 @@ def extract_subject_body_meta(msg) -> tuple[str, str, dict]:
                 if IMG_RE.search(payload):
                     has_embedded_images = 1
 
-    body_plain = "\n".join(header_to_str(x) for x in plain_parts if x)
-    body_html = "\n".join(html_to_text(header_to_str(x)) for x in html_parts if x)
-    body = body_plain if body_plain.strip() else body_html
+    body_plain = "\n".join(header_to_str(x) for x in plain_parts if x).strip()
+    body_html = "\n".join(header_to_str(x) for x in html_text_parts if x).strip()
+
+    # Combine plain and HTML text if both exist and are not identical.
+    if body_plain and body_html:
+        if body_plain.strip() == body_html.strip():
+            body = body_plain
+        else:
+            body = f"{body_plain}\n\n{body_html}"
+    else:
+        body = body_plain if body_plain else body_html
 
     meta = {
         "has_html": has_html,
@@ -218,11 +362,20 @@ def extract_subject_body_meta(msg) -> tuple[str, str, dict]:
         "has_iframe_tag": has_iframe,
         "has_embedded_images": has_embedded_images,
         "num_attachments": num_attachments,
+        "html_extracted_links": all_links,
     }
+
     return subject.strip(), body.strip(), meta
 
 
+# ============================================================================
+# TEXT CLEANING
+# ============================================================================
+
 def strip_replies_signature(text: str) -> str:
+    """
+    Remove common reply/forward/signature sections.
+    """
     text = FORWARDED_RE.split(text)[0]
     text = SIGNATURE_RE.sub("", text)
     text = QUOTE_RE.sub("", text)
@@ -230,6 +383,14 @@ def strip_replies_signature(text: str) -> str:
 
 
 def clean_text(text: str) -> str:
+    """
+    Basic text cleanup:
+    - normalize line breaks
+    - unescape HTML entities
+    - remove inline forwarded-message headers
+    - strip signatures/replies
+    - collapse whitespace
+    """
     text = header_to_str(text)
     text = text.replace("\r\n", "\n").replace("\r", "\n")
     text = html.unescape(text)
@@ -240,6 +401,12 @@ def clean_text(text: str) -> str:
 
 
 def mask_text(text: str) -> str:
+    """
+    Replace specific surface forms with placeholders.
+
+    - reduce overfitting to exact URLs, emails, account numbers, IDs
+    - keep the general pattern of the message
+    """
     text = clean_text(text)
     text = URL_RE.sub(" <URL> ", text)
     text = EMAIL_RE.sub(" <EMAIL> ", text)
@@ -250,6 +417,14 @@ def mask_text(text: str) -> str:
 
 
 def debias_text(text: str) -> str:
+    """
+    More aggressive normalization on top of mask_text().
+
+    Removes:
+    - long hex-like strings
+    - very long tokens
+    - some corpus-specific tokens
+    """
     text = mask_text(text)
     text = re.sub(r"\b[a-f0-9]{12,}\b", " ", text)
     text = re.sub(r"\b[\w\-]{25,}\b", " ", text)
@@ -258,31 +433,111 @@ def debias_text(text: str) -> str:
     return text.strip()
 
 
+# ============================================================================
+# FILTERING
+# ============================================================================
+
 def is_reasonable(subject: str, text: str) -> bool:
+    """
+    Basic quality filter for extracted messages.
+
+    Rejects cases that are:
+    - too short
+    - too long 
+    """
     subject = header_to_str(subject)
     text = header_to_str(text)
 
     combined = f"{subject} {text}".strip()
     if len(combined) < 30:
-        # print("Too short:", combined)
         return False
 
     token_count = len(re.findall(r"\b\w+\b", combined))
     return 5 <= token_count <= 2500
 
 
-def extract_urls(raw: str) -> list[str]:
-    urls = URL_RE.findall(raw)
-    normalized = []
+def has_meaningful_content(subject: str, body: str, msg, meta: dict) -> bool:
+    """
+    Decide whether an email has usable content, even if visible text is tiny.
+
+    Accept if at least one of these is true:
+    - normal visible text exists
+    - URL exists in raw message
+    - email address exists in raw message
+    - IP exists in raw message
+    - image/form/iframe suggests meaningful HTML content
+    - certain HTML signals appear
+    """
+    subject = header_to_str(subject)
+    body = header_to_str(body)
+    combined = f"{subject} {body}".strip()
+
+    if combined and len(re.findall(r"\w", combined)) >= 5:
+        return True
+
+    raw_msg = str(msg)
+    if URL_RE.search(raw_msg):
+        return True
+    if EMAIL_RE.search(raw_msg):
+        return True
+    if IP_RE.search(raw_msg):
+        return True
+
+    if meta.get("has_embedded_images", 0):
+        return True
+    if meta.get("has_form_tag", 0):
+        return True
+    if meta.get("has_iframe_tag", 0):
+        return True
+
+    raw_lower = raw_msg.lower()
+    html_signals = [
+        "<a ",
+        "<img",
+        "<form",
+        "<table",
+        "<title>",
+        "<body",
+        "href=",
+        "src=",
+        "action=",
+        "cid:",
+    ]
+    if any(signal in raw_lower for signal in html_signals):
+        return True
+
+    return False
+
+
+# ============================================================================
+# URL / FEATURE HELPERS
+# ============================================================================
+
+def extract_urls(raw: str, html_links: list[str] | None = None) -> list[str]:
+    """
+    Extract URLs from normal text plus optional links recovered directly
+    from HTML attributes.
+    """
+    urls = [normalize_url(u) for u in URL_RE.findall(raw)]
+    if html_links:
+        urls.extend(normalize_url(u) for u in html_links)
+
+    out = []
+    seen = set()
     for url in urls:
-        if url.lower().startswith("www."):
-            normalized.append("http://" + url)
-        else:
-            normalized.append(url)
-    return normalized
+        if not url:
+            continue
+        if url not in seen:
+            seen.add(url)
+            out.append(url)
+    return out
 
 
 def url_has_at_symbol(url: str) -> bool:
+    """
+    Detect whether a URL contains '@' in the netloc.
+    This is a classic obfuscation trick in phishing URLs.
+    """
     try:
         parsed = urlparse(url)
         return "@" in parsed.netloc
@@ -291,27 +546,39 @@ def url_has_at_symbol(url: str) -> bool:
 
 
 def get_domains(urls: list[str]) -> set[str]:
+    """
+    Return the set of distinct domains/netlocs extracted from URLs.
+    """
     domains = set()
     for url in urls:
-        try:
-            netloc = urlparse(url).netloc.lower()
-            if netloc:
-                domains.add(netloc)
-        except Exception:
-            continue
+        netloc = safe_netloc(url)
+        if netloc:
+            domains.add(netloc)
     return domains
 
 
 def count_keyword_hits(text: str) -> int:
+    """
+    Count how many tokens belong to the phishing keyword lexicon.
+    """
     tokens = re.findall(r"\b\w+\b", text.lower())
     return sum(1 for t in tokens if t in PHISH_KEYWORDS)
 
 
-def lightweight_features(subject: str, body: str, text: str, meta: dict) -> dict:
+def lightweight_features(subject: str, body: str, cleaned_text: str, meta: dict) -> dict:
+    """
+    Compute lightweight structural features.
+
+    Important design choice:
+    - raw features such as URLs, domains, punctuation, uppercase tokens
+      are computed from the extracted subject/body content
+    - keyword hits operate on cleaned_text
+    """
     raw = f"{subject}\n{body}"
-    tokens = re.findall(r"\b\w+\b", text.lower())
+    tokens = re.findall(r"\b\w+\b", cleaned_text.lower())
     upper_tokens = re.findall(r"\b[A-Z]{2,}\b", raw)
-    urls = extract_urls(raw)
+
+    urls = extract_urls(raw, meta.get("html_extracted_links", []))
     domains = get_domains(urls)
 
     has_ip_url = int(any(IP_URL_RE.search(url) for url in urls))
@@ -319,43 +586,62 @@ def lightweight_features(subject: str, body: str, text: str, meta: dict) -> dict
     has_external_links = int(len(domains) > 0)
 
     return {
-        "char_len": len(text),
+        "char_len": len(cleaned_text),
         "token_len": len(tokens),
         "subject_len": len(subject),
         "num_urls": len(urls),
         "num_emails": len(EMAIL_RE.findall(raw)),
         "num_domains": len(domains),
         "has_ip_url": has_ip_url,
-        "has_at_in_url": has_at_in_url,
+        # "has_at_in_url": has_at_in_url,
         "has_external_links": has_external_links,
         "num_exclamation": raw.count("!"),
         "num_upper_tokens": len(upper_tokens),
-        "keyword_hits": count_keyword_hits(text),
+        "keyword_hits": count_keyword_hits(cleaned_text),
         # "has_html": meta["has_html"],
         "has_form_tag": meta["has_form_tag"],
         "has_script_tag": meta["has_script_tag"],
         "has_iframe_tag": meta["has_iframe_tag"],
-        "has_embedded_images": meta["has_embedded_images"],
+        # "has_embedded_images": meta["has_embedded_images"],
         "num_attachments": meta["num_attachments"],
     }
 
 
-def canonical_key(text: str) -> str:
-    key = debias_text(text)
-    key = re.sub(r"\b(?:re|fw|fwd)\b", " ", key)
-    key = MULTISPACE_RE.sub(" ", key)
-    return key[:4000]
+# ============================================================================
+# DEDUPLICATION
+# ============================================================================
+
+def canonical_key(subject: str, body: str) -> str:
+    """
+    Create a canonical key for deduplication based on cleaned subject and body.
+    - use cleaned text, not aggressively masked text
+    - keep subject + cleaned body
+    - normalize reply prefixes
+    - trim excessive whitespace
+    """
+    subject = clean_text(subject).lower()
+    body = clean_text(body).lower()
+
+    subject = re.sub(r"^\s*(re|fw|fwd)\s*:\s*", "", subject)
+    key = f"{subject}\n{body}"
+    key = MULTISPACE_RE.sub(" ", key).strip()
+
+    # Keep a large cap to avoid pathological memory growth but preserve more
+    # content than before.
+    return key[:8000]
 
 
 def deduplicate(rows: list[dict]) -> tuple[list[dict], int]:
+    """
+    Remove near-exact duplicates using the conservative canonical key.
+    """
     seen = set()
     out = []
     duplicates_removed = 0
 
     for row in rows:
-        key = canonical_key(row["text"])
+        key = canonical_key(row["subject_raw"], row["body_raw"])
         if key in seen:
-            # print(key)
             duplicates_removed += 1
             continue
         seen.add(key)
@@ -364,7 +650,14 @@ def deduplicate(rows: list[dict]) -> tuple[list[dict], int]:
     return out, duplicates_removed
 
 
+# ============================================================================
+# STATS
+# ============================================================================
+
 def build_dataset_stats(rows: list[dict]) -> dict:
+    """
+    Build summary statistics for numeric feature columns.
+    """
     if not rows:
         return {}
 
@@ -383,9 +676,9 @@ def build_dataset_stats(rows: list[dict]) -> dict:
         "has_form_tag",
         "has_script_tag",
         "has_iframe_tag",
-        "has_embedded_images",
+        # "has_embedded_images",
         "has_ip_url",
-        "has_at_in_url",
+        # "has_at_in_url",
         "has_external_links",
     ]
 
@@ -406,63 +699,15 @@ def build_dataset_stats(rows: list[dict]) -> dict:
 
     return stats
 
-def has_meaningful_content(subject: str, body: str, msg, meta: dict) -> bool:
-    """
-    Decide whether an email has usable content, even if visible text is tiny.
 
-    Accept as non-empty if at least one of these is true:
-    - normal text exists
-    - URL exists
-    - email address exists
-    - image exists
-    - HTML structure suggests content-bearing message
-    """
-    subject = header_to_str(subject)
-    body = header_to_str(body)
-
-    combined = f"{subject} {body}".strip()
-
-    # 1. Normal visible text
-    if combined and len(re.findall(r"\w", combined)) >= 5:
-        return True
-
-    # 2. URL / email / IP present anywhere in raw message
-    raw_msg = str(msg)
-    if URL_RE.search(raw_msg):
-        return True
-    if EMAIL_RE.search(raw_msg):
-        return True
-    if IP_RE.search(raw_msg):
-        return True
-
-    # 3. Content-bearing HTML structure
-    if meta.get("has_embedded_images", 0):
-        return True
-    if meta.get("has_form_tag", 0):
-        return True
-    if meta.get("has_iframe_tag", 0):
-        return True
-
-    # 4. Raw HTML tags that often carry phishing content
-    raw_lower = raw_msg.lower()
-    html_signals = [
-        "<a ",
-        "<img",
-        "<form",
-        "<table",
-        "<title>",
-        "<body",
-        "href=",
-        "src=",
-        "action=",
-        "cid:",
-    ]
-    if any(signal in raw_lower for signal in html_signals):
-        return True
-
-    return False
+# ============================================================================
+# MAIN PARSER
+# ============================================================================
 
 def parse_mbox(mbox_path: Path, *, label: int, source: str) -> tuple[list[dict], dict]:
+    """
+    Parse one mbox file into structured rows plus detailed statistics.
+    """
     rows = []
     mbox = mailbox.mbox(str(mbox_path), factory=None, create=False)
 
@@ -497,6 +742,7 @@ def parse_mbox(mbox_path: Path, *, label: int, source: str) -> tuple[list[dict],
             stats["excluded_reasons"]["failed_raw_reasonableness"] += 1
             continue
 
+        # Text field intended for modeling.
         text = debias_text(f"Subject: {subject}\n\n{body}")
 
         if not is_reasonable(subject, text):
@@ -510,7 +756,13 @@ def parse_mbox(mbox_path: Path, *, label: int, source: str) -> tuple[list[dict],
             "source": source,
             "subject": subject,
             "text": text,
+
+            # Keep raw extracted versions internally for safer deduplication.
+            # They are dropped before CSV export.
+            "subject_raw": subject,
+            "body_raw": body,
         }
+
         row.update(lightweight_features(subject, body, text, meta))
         rows.append(row)
 
@@ -522,11 +774,26 @@ def parse_mbox(mbox_path: Path, *, label: int, source: str) -> tuple[list[dict],
     stats["excluded_reasons"]["duplicate"] += duplicates_removed
     stats["saved_after_dedup"] = len(deduped_rows)
 
-    stats["dataset_stats"] = build_dataset_stats(deduped_rows)
-    return deduped_rows, stats
+    # Drop internal helper fields before export/stats.
+    export_rows = []
+    for row in deduped_rows:
+        row = dict(row)
+        row.pop("subject_raw", None)
+        row.pop("body_raw", None)
+        export_rows.append(row)
 
+    stats["dataset_stats"] = build_dataset_stats(export_rows)
+    return export_rows, stats
+
+
+# ============================================================================
+# OUTPUT
+# ============================================================================
 
 def write_csv(rows: list[dict], out_path: Path) -> None:
+    """
+    Save parsed rows to CSV.
+    """
     if not rows:
         raise RuntimeError("No usable mailbox rows were parsed.")
 
@@ -540,6 +807,9 @@ def write_csv(rows: list[dict], out_path: Path) -> None:
 
 
 def print_stats(stats: dict) -> None:
+    """
+    Pretty-print parser summary and numeric dataset statistics.
+    """
     print("\n" + "=" * 60)
     print("PARSING SUMMARY")
     print("=" * 60)
@@ -580,9 +850,9 @@ def print_stats(stats: dict) -> None:
             "has_form_tag",
             "has_script_tag",
             "has_iframe_tag",
-            "has_embedded_images",
+         # "has_embedded_images",
             "has_ip_url",
-            "has_at_in_url",
+            # "has_at_in_url",
             "has_external_links",
         ]
 
@@ -597,7 +867,21 @@ def print_stats(stats: dict) -> None:
             )
 
 
+# ============================================================================
+# CLI
+# ============================================================================
+
 def main() -> None:
+    """
+    Command-line entry point.
+
+    Example:
+    python parse_mailbox.py \
+        --mbox data/raw/mbox/enron.mbox \
+        --out data/processed/enron_parsed.csv \
+        --label 0 \
+        --source enron
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--mbox",
