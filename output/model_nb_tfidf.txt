@@ -1,0 +1,166 @@
+
+============================================================
+DATASET SUMMARY
+============================================================
+TRAIN rows= 2782  labels={0: 1391, 1: 1391}
+VAL   rows=  348  labels={0: 174, 1: 174}
+TEST  rows=  348  labels={0: 174, 1: 174}
+
+Text input: subject + text (concatenated)
+TF-IDF max features: 50000
+MultinomialNB alpha: 1.0
+
+============================================================
+TRAIN METRICS
+============================================================
+Accuracy:             0.9925
+Balanced accuracy:    0.9925
+Precision:            0.9957
+Recall / Sensitivity: 0.9892
+Specificity:          0.9957
+F1 score:             0.9924
+ROC AUC:              0.9991
+PR AUC:               0.9992
+Matthews corrcoef:    0.9849
+
+Classification report:
+              precision    recall  f1-score   support
+
+           0     0.9893    0.9957    0.9925      1391
+           1     0.9957    0.9892    0.9924      1391
+
+    accuracy                         0.9925      2782
+   macro avg     0.9925    0.9925    0.9925      2782
+weighted avg     0.9925    0.9925    0.9925      2782
+
+Confusion matrix:
+[[1385    6]
+ [  15 1376]]
+
+============================================================
+VAL METRICS
+============================================================
+Accuracy:             0.9799
+Balanced accuracy:    0.9799
+Precision:            1.0000
+Recall / Sensitivity: 0.9598
+Specificity:          1.0000
+F1 score:             0.9795
+ROC AUC:              0.9992
+PR AUC:               0.9993
+Matthews corrcoef:    0.9605
+
+Classification report:
+              precision    recall  f1-score   support
+
+           0     0.9613    1.0000    0.9803       174
+           1     1.0000    0.9598    0.9795       174
+
+    accuracy                         0.9799       348
+   macro avg     0.9807    0.9799    0.9799       348
+weighted avg     0.9807    0.9799    0.9799       348
+
+Confusion matrix:
+[[174   0]
+ [  7 167]]
+
+============================================================
+TEST METRICS
+============================================================
+Accuracy:             0.9914
+Balanced accuracy:    0.9914
+Precision:            0.9886
+Recall / Sensitivity: 0.9943
+Specificity:          0.9885
+F1 score:             0.9914
+ROC AUC:              0.9985
+PR AUC:               0.9983
+Matthews corrcoef:    0.9828
+
+Classification report:
+              precision    recall  f1-score   support
+
+           0     0.9942    0.9885    0.9914       174
+           1     0.9886    0.9943    0.9914       174
+
+    accuracy                         0.9914       348
+   macro avg     0.9914    0.9914    0.9914       348
+weighted avg     0.9914    0.9914    0.9914       348
+
+Confusion matrix:
+[[172   2]
+ [  1 173]]
+
+============================================================
+TRAIN ERROR ANALYSIS
+============================================================
+
+False Negatives (phishing → predicted legit): 15
+source
+nazario    15
+
+False Positives (legit → predicted phishing): 6
+source
+enron    6
+
+============================================================
+VAL ERROR ANALYSIS
+============================================================
+
+False Negatives (phishing → predicted legit): 7
+source
+nazario    7
+
+False Positives (legit → predicted phishing): 0
+
+============================================================
+TEST ERROR ANALYSIS
+============================================================
+
+False Negatives (phishing → predicted legit): 1
+source
+nazario    1
+
+False Positives (legit → predicted phishing): 2
+source
+enron    2
+
+============================================================
+TOP 15 TERMS FAVOURING PHISHING
+============================================================
+          term    delta
+          ebay 3.498488
+        paypal 3.496454
+  your account 3.061499
+           0x9 2.971602
+           0x3 2.960196
+           0x8 2.959104
+           0x5 2.956125
+           0x6 2.951733
+           0x0 2.940156
+           0x2 2.930697
+           0x4 2.928210
+           0x1 2.928018
+           0x7 2.918657
+   your paypal 2.860248
+paypal account 2.847599
+
+============================================================
+TOP 15 TERMS FAVOURING LEGIT
+============================================================
+       term     delta
+         fw -2.834171
+   attached -2.826095
+    meeting -2.816677
+     market -2.472953
+       2001 -2.386272
+     energy -2.298067
+         pm -2.289453
+     num pm -2.265616
+      nyiso -2.197343
+       list -2.176808
+        gas -2.111953
+image image -2.108337
+    num fax -2.086767
+      power -2.043923
+  day ahead -2.039685
