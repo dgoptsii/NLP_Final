@@ -85,7 +85,7 @@ python parse_mailbox.py \
 
 ```bash
 python parse_mailbox.py \
-  --mbox data/raw/mbox/phishing.mbox \
+  --mbox data/raw/mbox/phishing3.mbox \
   --out data/processed/nazario_parsed.csv \
   --label 1 \
   --source nazario
@@ -104,7 +104,7 @@ This step:
 ### 3. Build train / val / test splits
 
 ```bash
-python build_dataset_splits.py \
+python build_dataset.py \
   --enron data/processed/enron_parsed.csv \
   --nazario data/processed/nazario_parsed.csv \
   --out-dir data/processed/splits \

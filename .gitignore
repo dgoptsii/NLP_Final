@@ -1,6 +1,5 @@
 # Ignore all data
-data/
-processed/
+
 
 # OR (if you want more control, use this instead):
 
@@ -8,9 +7,9 @@ processed/
 data/raw/
 
 # Processed datasets
-data/processed/
+
 
 # Specific file types (extra safety)
-*.csv
+# *.csv
 *.tar
-*.json
+# *.json
