@@ -1,0 +1,137 @@
+
+Device: cpu
+
+============================================================
+DATASET SUMMARY
+============================================================
+TRAIN rows= 2782  labels={0: 1391, 1: 1391}
+VAL   rows=  348  labels={0: 174, 1: 174}
+TEST  rows=  348  labels={0: 174, 1: 174}
+
+Max chars: 5000 | Vocab size: 101
+Model parameters: 254,530
+
+============================================================
+TRAINING
+============================================================
+Epoch   1/10  loss=0.4623  val_acc=0.9511  val_f1=0.9489
+Epoch   2/10  loss=0.1900  val_acc=0.9569  val_f1=0.9550
+Epoch   3/10  loss=0.1072  val_acc=0.9856  val_f1=0.9854
+Epoch   4/10  loss=0.0742  val_acc=0.9598  val_f1=0.9581
+Epoch   5/10  loss=0.0785  val_acc=0.9655  val_f1=0.9643
+Epoch   6/10  loss=0.0485  val_acc=0.9655  val_f1=0.9643
+Epoch   7/10  loss=0.0383  val_acc=0.9655  val_f1=0.9643
+Epoch   8/10  loss=0.0342  val_acc=0.9914  val_f1=0.9913
+Epoch   9/10  loss=0.0350  val_acc=0.9569  val_f1=0.9550
+Epoch  10/10  loss=0.0250  val_acc=0.9914  val_f1=0.9913
+
+Best val F1: 0.9913 — using this checkpoint for evaluation.
+
+============================================================
+TRAIN METRICS
+============================================================
+Accuracy:             0.4867
+Balanced accuracy:    0.4867
+Specificity:          0.4867
+F1 score:             0.4867
+ROC AUC:              0.4820
+PR AUC:               0.4871
+Matthews corrcoef:    -0.0266
+
+Classification report:
+              precision    recall  f1-score   support
+
+           0     0.4867    0.4867    0.4867      1391
+           1     0.4867    0.4867    0.4867      1391
+
+    accuracy                         0.4867      2782
+   macro avg     0.4867    0.4867    0.4867      2782
+weighted avg     0.4867    0.4867    0.4867      2782
+
+Confusion matrix:
+[[677 714]
+ [714 677]]
+
+============================================================
+VAL METRICS
+============================================================
+Accuracy:             0.9914
+Balanced accuracy:    0.9914
+Specificity:          1.0000
+F1 score:             0.9913
+ROC AUC:              0.9969
+PR AUC:               0.9977
+Matthews corrcoef:    0.9829
+
+Classification report:
+              precision    recall  f1-score   support
+
+           0     0.9831    1.0000    0.9915       174
+           1     1.0000    0.9828    0.9913       174
+
+    accuracy                         0.9914       348
+   macro avg     0.9915    0.9914    0.9914       348
+weighted avg     0.9915    0.9914    0.9914       348
+
+Confusion matrix:
+[[174   0]
+ [  3 171]]
+
+============================================================
+TEST METRICS
+============================================================
+Accuracy:             0.9914
+Balanced accuracy:    0.9914
+Specificity:          0.9885
+F1 score:             0.9914
+ROC AUC:              0.9997
+PR AUC:               0.9997
+Matthews corrcoef:    0.9828
+
+Classification report:
+              precision    recall  f1-score   support
+
+           0     0.9942    0.9885    0.9914       174
+           1     0.9886    0.9943    0.9914       174
+
+    accuracy                         0.9914       348
+   macro avg     0.9914    0.9914    0.9914       348
+weighted avg     0.9914    0.9914    0.9914       348
+
+Confusion matrix:
+[[172   2]
+ [  1 173]]
+
+============================================================
+TRAIN ERROR ANALYSIS
+============================================================
+
+False Negatives (phishing → predicted legit): 714
+source
+nazario    714
+
+False Positives (legit → predicted phishing): 714
+source
+enron    714
+
+============================================================
+VAL ERROR ANALYSIS
+============================================================
+
+False Negatives (phishing → predicted legit): 3
+source
+nazario    3
+
+False Positives (legit → predicted phishing): 0
+
+============================================================
+TEST ERROR ANALYSIS
+============================================================
+
+False Negatives (phishing → predicted legit): 1
+source
+nazario    1
+
+False Positives (legit → predicted phishing): 2
+source
+enron    2
