@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Gaussian Naive Bayes baseline on pre-split phishing datasets.
+Gaussian Naive Bayes on phishing datasets
+python evaluate_split_model_nb.py --train ./data/processed/splits/train.csv --val ./data/processed/splits/val.csv --test ./data/processed/splits/test.csv > ./output/model_nb.txt
 """
 
 from __future__ import annotations
