@@ -9,7 +9,10 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from matplotlib import pyplot as plt
+import numpy as np
 import pandas as pd
+import shap
 from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import (
     accuracy_score,
@@ -149,23 +152,45 @@ def print_feature_means(model: GaussianNB) -> None:
     print("=" * 60)
     print(df.to_string(index=False))
 
+# Explainability on the test set
+def plot_shap(model: GaussianNB, X_test: np.ndarray) -> None:
+    output_dir = Path("./output")
+    output_dir.mkdir(parents=True, exist_ok=True)
+ 
+    predict_fn = lambda x: model.predict_proba(x)[:, 1]
+ 
+    background = shap.kmeans(X_test, 50)
+    explainer = shap.KernelExplainer(predict_fn, background)
+    shap_values = explainer.shap_values(X_test, nsamples=100)
+ 
+    plt.figure()
+    shap.summary_plot(
+        shap_values,
+        X_test,
+        feature_names=FEATURE_COLUMNS,
+        show=False,
+        plot_type="dot",
+    )
+    plt.title("SHAP Summary Plot for Gaussian NB (test)")
+    plt.tight_layout()
+    summary_path = output_dir / "model_nb_shap_summary.png"
+    plt.savefig(summary_path, dpi=150, bbox_inches="tight")
+    plt.close()
+ 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--train", type=Path, required=True, help="Path to train.csv")
     parser.add_argument("--val",   type=Path, required=True, help="Path to val.csv")
     parser.add_argument("--test",  type=Path, required=True, help="Path to test.csv")
-    parser.add_argument(
-        "--var-smoothing",
-        type=float,
-        default=1e-9,
-        help="GaussianNB var_smoothing parameter (default: 1e-9)",
-    )
+    
     args = parser.parse_args()
 
     train_df = load_split(args.train, "train")
-    val_df   = load_split(args.val,   "val")
-    test_df  = load_split(args.test,  "test")
+    val_df = load_split(args.val,   "val")
+    test_df = load_split(args.test,  "test")
+
+    VAR_SMOOTHING = 0.1
 
     print("\n" + "=" * 60)
     print("DATASET SUMMARY")
@@ -183,7 +208,7 @@ def main() -> None:
     X_test = test_df[FEATURE_COLUMNS].values
     y_test = test_df["label"].values
 
-    model = GaussianNB(var_smoothing=args.var_smoothing)
+    model = GaussianNB(var_smoothing=VAR_SMOOTHING)
     model.fit(X_train, y_train)
 
     train_pred = model.predict(X_train)
@@ -204,6 +229,7 @@ def main() -> None:
     print_error_analysis("TEST",  test_df,  test_pred)
 
     print_feature_means(model)
+    plot_shap(model, X_test)
 
 
 if __name__ == "__main__":

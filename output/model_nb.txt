@@ -9,119 +9,119 @@ TEST  rows=  348  labels={0: 174, 1: 174}
 ============================================================
 TRAIN METRICS
 ============================================================
-Accuracy:             0.8936
-Balanced accuracy:    0.8936
-Precision:            0.9620
-Recall / Sensitivity: 0.8196
-Specificity:          0.9676
-F1 score:             0.8851
-ROC AUC:              0.9718
-PR AUC:               0.9654
-Matthews corrcoef:    0.7960
+Accuracy:             0.6804
+Balanced accuracy:    0.6804
+Precision:            0.6187
+Recall / Sensitivity: 0.9403
+Specificity:          0.4206
+F1 score:             0.7464
+ROC AUC:              0.8006
+PR AUC:               0.7497
+Matthews corrcoef:    0.4224
 
 Classification report:
               precision    recall  f1-score   support
 
-           0     0.8428    0.9676    0.9009      1391
-           1     0.9620    0.8196    0.8851      1391
+           0     0.8757    0.4206    0.5682      1391
+           1     0.6187    0.9403    0.7464      1391
 
-    accuracy                         0.8936      2782
-   macro avg     0.9024    0.8936    0.8930      2782
-weighted avg     0.9024    0.8936    0.8930      2782
+    accuracy                         0.6804      2782
+   macro avg     0.7472    0.6804    0.6573      2782
+weighted avg     0.7472    0.6804    0.6573      2782
 
 Confusion matrix:
-[[1346   45]
- [ 251 1140]]
+[[ 585  806]
+ [  83 1308]]
 
 ============================================================
 VAL METRICS
 ============================================================
-Accuracy:             0.8736
-Balanced accuracy:    0.8736
-Precision:            0.9643
-Recall / Sensitivity: 0.7759
-Specificity:          0.9713
-F1 score:             0.8599
-ROC AUC:              0.9434
-PR AUC:               0.9345
-Matthews corrcoef:    0.7618
+Accuracy:             0.6724
+Balanced accuracy:    0.6724
+Precision:            0.6111
+Recall / Sensitivity: 0.9483
+Specificity:          0.3966
+F1 score:             0.7432
+ROC AUC:              0.7703
+PR AUC:               0.7161
+Matthews corrcoef:    0.4134
 
 Classification report:
               precision    recall  f1-score   support
 
-           0     0.8125    0.9713    0.8848       174
-           1     0.9643    0.7759    0.8599       174
+           0     0.8846    0.3966    0.5476       174
+           1     0.6111    0.9483    0.7432       174
 
-    accuracy                         0.8736       348
-   macro avg     0.8884    0.8736    0.8723       348
-weighted avg     0.8884    0.8736    0.8723       348
+    accuracy                         0.6724       348
+   macro avg     0.7479    0.6724    0.6454       348
+weighted avg     0.7479    0.6724    0.6454       348
 
 Confusion matrix:
-[[169   5]
- [ 39 135]]
+[[ 69 105]
+ [  9 165]]
 
 ============================================================
 TEST METRICS
 ============================================================
-Accuracy:             0.8822
-Balanced accuracy:    0.8822
-Precision:            0.9586
-Recall / Sensitivity: 0.7989
-Specificity:          0.9655
-F1 score:             0.8715
-ROC AUC:              0.9705
-PR AUC:               0.9613
-Matthews corrcoef:    0.7752
+Accuracy:             0.6437
+Balanced accuracy:    0.6437
+Precision:            0.5906
+Recall / Sensitivity: 0.9368
+Specificity:          0.3506
+F1 score:             0.7244
+ROC AUC:              0.7556
+PR AUC:               0.6974
+Matthews corrcoef:    0.3547
 
 Classification report:
               precision    recall  f1-score   support
 
-           0     0.8276    0.9655    0.8912       174
-           1     0.9586    0.7989    0.8715       174
+           0     0.8472    0.3506    0.4959       174
+           1     0.5906    0.9368    0.7244       174
 
-    accuracy                         0.8822       348
-   macro avg     0.8931    0.8822    0.8814       348
-weighted avg     0.8931    0.8822    0.8814       348
+    accuracy                         0.6437       348
+   macro avg     0.7189    0.6437    0.6102       348
+weighted avg     0.7189    0.6437    0.6102       348
 
 Confusion matrix:
-[[168   6]
- [ 35 139]]
+[[ 61 113]
+ [ 11 163]]
 
 ============================================================
 TRAIN ERROR ANALYSIS
 ============================================================
 
-False Negatives (phishing → predicted legit): 251
+False Negatives (phishing predicted as legit): 83
 source
-nazario    251
+nazario    83
 
-False Positives (legit → predicted phishing): 45
+False Positives (legit predicted as phishing): 806
 source
-enron    45
+enron    806
 
 ============================================================
 VAL ERROR ANALYSIS
 ============================================================
 
-False Negatives (phishing → predicted legit): 39
+False Negatives (phishing predicted as legit): 9
 source
-nazario    39
+nazario    9
 
-False Positives (legit → predicted phishing): 5
+False Positives (legit predicted as phishing): 105
 source
-enron    5
+enron    105
 
 ============================================================
 TEST ERROR ANALYSIS
 ============================================================
 
-False Negatives (phishing → predicted legit): 35
+False Negatives (phishing predicted as legit): 11
 source
-nazario    35
+nazario    11
 
-False Positives (legit → predicted phishing): 6
+False Positives (legit predicted as phishing): 113
 source
-enron    6
+enron    113
 
 ============================================================
 FEATURE MEANS PER CLASS (sorted by delta)
