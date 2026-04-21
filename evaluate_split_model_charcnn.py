@@ -72,7 +72,7 @@ def load_split(path: Path, split_name: str, max_chars: int) -> pd.DataFrame:
 
     df["label"] = pd.to_numeric(df["label"], errors="raise").astype(int)
     df["subject"] = df["subject"].fillna("") # Na/NaN with ""
-    df["text"]    = df["text"].fillna("") # Na/NaN with ""
+    df["text"] = df["text"].fillna("") # Na/NaN with ""
     df["text_input"] = (df["subject"] + " " + df["text"]).str[:max_chars] # concatenate subject + text
 
     return df

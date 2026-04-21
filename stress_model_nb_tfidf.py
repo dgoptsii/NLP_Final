@@ -1,22 +1,4 @@
 #!/usr/bin/env python3
-"""
-stress_test_nb_tfidf.py
-
-Robustness evaluation of the NB+TF-IDF model against text obfuscation.
-
-Obfuscation techniques applied randomly to 25% of words in phishing emails:
-  1. Character substitution — e→3, i→1, o→0, a→@, s→5
-  2. Homoglyph substitution — latin characters replaced with Unicode lookalikes
-
-Robustness metric:
-  recall_drop = (recall_original - recall_obfuscated) / recall_original * 100
-  A drop >10% supports the hypothesis.
-
-Usage
------
-python stress_test_nb_tfidf.py --test ./data/processed/splits/test.csv
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -26,10 +8,6 @@ from pathlib import Path
 
 import pandas as pd
 from sklearn.metrics import recall_score, f1_score, accuracy_score
-
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
 
 MODEL_PATH = Path("./pkl_models/nb_tfidf.pkl")
 OBFUSCATION_RATE = 0.25
