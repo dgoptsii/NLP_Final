@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import string
 import warnings
+import pickle
 from pathlib import Path
 
 import numpy as np
@@ -255,13 +256,12 @@ def main() -> None:
     parser.add_argument("--train",       type=Path,  required=True)
     parser.add_argument("--val",         type=Path,  required=True)
     parser.add_argument("--test",        type=Path,  required=True)
-    parser.add_argument("--max-chars",   type=int,   default=5000,
-                        help="Max characters per email (default: 5000)")
-    parser.add_argument("--epochs",      type=int,   default=10)
-    parser.add_argument("--batch-size",  type=int,   default=32)
+    parser.add_argument("--max-chars",   type=int,   default=1024)
+    parser.add_argument("--epochs",      type=int,   default=7)
+    parser.add_argument("--batch-size",  type=int,   default=64)
     parser.add_argument("--lr",          type=float, default=1e-3)
     parser.add_argument("--embed-dim",   type=int,   default=64)
-    parser.add_argument("--num-filters", type=int,   default=256)
+    parser.add_argument("--num-filters", type=int,   default=128)
     parser.add_argument("--dropout",     type=float, default=0.5)
     parser.add_argument("--random-seed", type=int,   default=42)
     args = parser.parse_args()
@@ -303,8 +303,8 @@ def main() -> None:
     print("TRAINING")
     print("=" * 60)
 
-    best_val_f1   = 0.0
-    best_state    = None
+    best_val_f1 = 0.0
+    best_state = None
 
     for epoch in range(1, args.epochs + 1):
         train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
