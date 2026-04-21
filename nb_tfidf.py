@@ -14,6 +14,7 @@ import pickle
 from pathlib import Path
 
 import pandas as pd
+from lime.lime_text import LimeTextExplainer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
@@ -139,43 +140,39 @@ def print_error_analysis(name: str, df: pd.DataFrame, y_pred) -> None:
     if len(fp) > 0:
         print(fp["source"].value_counts().to_string())
 
-# Printing the TF-IDF terms most associated with each class
-def print_top_tfidf_features(model: Pipeline, n: int = 15) -> None:
-    vectorizer: TfidfVectorizer = model.named_steps["tfidf"]
-    nb: MultinomialNB = model.named_steps["nb"]
-
-    feature_names = vectorizer.get_feature_names_out()
-    log_probs = nb.feature_log_prob_
-
-    delta = log_probs[1] - log_probs[0]
-
-    df = pd.DataFrame({"term": feature_names, "delta": delta})
-
+# Aggregate LIME to see the words most common across the different e-mails
+def print_aggregated_lime(model: Pipeline, test_df: pd.DataFrame) -> None:
     print("\n" + "=" * 60)
-    print(f"TOP {n} TERMS FAVOURING PHISHING")
+    print("Most common words associated with the prediction (using LIME)")
     print("=" * 60)
-    print(df.nlargest(n, "delta")[["term", "delta"]].to_string(index=False))
-
-    print("\n" + "=" * 60)
-    print(f"TOP {n} TERMS FAVOURING LEGIT")
-    print("=" * 60)
-    print(df.nsmallest(n, "delta")[["term", "delta"]].to_string(index=False))
-
-    positive_delta = df[df["delta"] > 0]["delta"]
-    total_signal   = positive_delta.sum()
  
-    print("\n" + "=" * 60)
-    print("CONCENTRATION OF KEYWORDS")
-    print("=" * 60)
-    print(f"\nVocabulary size: {len(df):,}")
-    print(f"Terms with positive delta (more common in phishing than in regular emails): {len(positive_delta):,}")
-    print(f"Sum of all positive delta: {total_signal:.4f}")
-    print()
+    explainer = LimeTextExplainer(class_names=["legit", "phishing"])
+    predict_fn = lambda texts: model.predict_proba(texts)
+    texts = test_df["text_input"].tolist()
+    labels = test_df["label"].values
  
-    for top_n in [5, 10, 20, 50, 100]:
-        top_signal = df.nlargest(top_n, "delta")["delta"].sum()
-        pct = top_signal / total_signal * 100
-        print(f"Top {top_n:4d} terms account for {pct:5.1f}% of total signal")
+    for class_label, class_name in [(1, "PHISHING"), (0, "LEGIT")]:
+        counts  = {}
+        indices = [i for i, l in enumerate(labels) if l == class_label]
+ 
+        for i, idx in enumerate(indices):
+            exp = explainer.explain_instance(
+                texts[idx], predict_fn, num_features=10, num_samples=200, labels=(1,)
+            )
+            for word, weight in exp.as_list(label=1):
+                if (class_label == 1 and weight > 0) or (class_label == 0 and weight < 0):
+                    word = word.lower().strip(".,!?\"'")
+                    if len(word) > 2:
+                        counts[word] = counts.get(word, 0) + 1
+ 
+        total   = len(indices)
+        sorted_ = sorted(counts.items(), key=lambda x: x[1], reverse=True)
+ 
+        print(f"\n  Top 10 words: {class_name}")
+        print(f"  {'Word':<25} {'Count':>6} {'% of emails':>12}")
+        print("  " + "-" * 45)
+        for word, count in sorted_[:10]:
+            print(f"  {word:<25} {count:>6}   {count / total * 100:>9.1f}%")
 
 
 def main() -> None:
@@ -188,8 +185,8 @@ def main() -> None:
     args = parser.parse_args()
 
     train_df = load_split(args.train, "train")
-    val_df   = load_split(args.val,   "val")
-    test_df  = load_split(args.test,  "test")
+    val_df   = load_split(args.val, "val")
+    test_df  = load_split(args.test, "test")
 
     print("\n" + "=" * 60)
     print("DATASET SUMMARY")
@@ -198,7 +195,6 @@ def main() -> None:
     print_dataset_summary("VAL",   val_df)
     print_dataset_summary("TEST",  test_df)
 
-    print("\nText input: subject + text (concatenated)")
     print(f"TF-IDF max features: {args.max_features}")
     print(f"MultinomialNB alpha: {args.alpha}")
 
@@ -240,16 +236,17 @@ def main() -> None:
 
     test_pred = model.predict(X_test)
     test_prob = model.predict_proba(X_test)[:, 1]
-
+    
     print_metrics_block("TRAIN", y_train, train_pred, train_prob)
     print_metrics_block("VAL",   y_val,   val_pred,   val_prob)
     print_metrics_block("TEST",  y_test,  test_pred,  test_prob)
 
+    # To understand better the behaviour of the model
     print_error_analysis("TRAIN", train_df, train_pred)
     print_error_analysis("VAL",   val_df,   val_pred)
     print_error_analysis("TEST",  test_df,  test_pred)
 
-    print_top_tfidf_features(model)
+    print_aggregated_lime(model, test_df)
 
 
 if __name__ == "__main__":

@@ -5,8 +5,6 @@ DATASET SUMMARY
 TRAIN rows= 2782  labels={0: 1391, 1: 1391}
 VAL   rows=  348  labels={0: 174, 1: 174}
 TEST  rows=  348  labels={0: 174, 1: 174}
-
-Text input: subject + text (concatenated)
 TF-IDF max features: 50000
 MultinomialNB alpha: 1.0
 
@@ -126,55 +124,33 @@ source
 enron    2
 
 ============================================================
-TOP 15 TERMS FAVOURING PHISHING
-============================================================
-          term    delta
-          ebay 3.499101
-        paypal 3.497588
-  your account 3.064696
-           0x9 3.017400
-           0x3 3.005444
-           0x8 3.003949
-           0x5 3.000632
-           0x6 2.998776
-           0x0 2.985264
-           0x2 2.975818
-           0x4 2.974483
-           0x1 2.973068
-           0x7 2.964459
-   your paypal 2.861442
-paypal account 2.848641
-
-============================================================
-TOP 15 TERMS FAVOURING LEGIT
-============================================================
-       term     delta
-         fw -2.824658
-   attached -2.812643
-    meeting -2.802816
-     market -2.465564
-       2001 -2.377140
-     energy -2.288690
-         pm -2.284735
-     num pm -2.260945
-      nyiso -2.189386
-       list -2.170027
-        gas -2.101982
-image image -2.100196
-    num fax -2.074507
-  day ahead -2.035471
-      power -2.035300
-
-============================================================
-CONCENTRATION OF KEYWORDS
+Most common words associated with the prediction (using LIME)
 ============================================================
 
-Vocabulary size: 50,000
-Terms with positive delta (more common in phishing than in regular emails): 20,305
-Sum of all positive delta: 6029.5160
+  Top 10 words: PHISHING
+  Word                       Count  % of emails
+  ---------------------------------------------
+  account                       35        20.1%
+  your                          29        16.7%
+  bank                          22        12.6%
+  paypal                        19        10.9%
+  ebay                          15         8.6%
+  banking                       14         8.0%
+  and                           13         7.5%
+  third                         13         7.5%
+  fifth                         11         6.3%
+  this                          11         6.3%
 
-Top    5 terms account for   0.3% of total signal
-Top   10 terms account for   0.5% of total signal
-Top   20 terms account for   1.0% of total signal
-Top   50 terms account for   2.1% of total signal
-Top  100 terms account for   3.8% of total signal
+  Top 10 words: LEGIT
+  Word                       Count  % of emails
+  ---------------------------------------------
+  num                           60        34.5%
+  the                           23        13.2%
+  attached                      22        12.6%
+  meeting                       14         8.0%
+  know                          13         7.5%
+  thanks                        12         6.9%
+  image                         12         6.9%
+  market                        12         6.9%
+  call                          11         6.3%
+  list                          10         5.7%
