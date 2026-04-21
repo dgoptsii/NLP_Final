@@ -3,18 +3,13 @@
 Naive Bayes + TF-IDF model on phishing datasets.
 
 TF-IDF (unigrams + bigrams, top 50k features) then MultinomialNB
-  → MultinomialNB
+GaussianNB assumes gaussian distributions and does not handle sparse matrices well, so MultinomialNB is used
 
-Why MultinomialNB here instead of GaussianNB?
-  TF-IDF produces sparse non-negative count-like values — exactly what
-  MultinomialNB is designed for. GaussianNB assumes continuous Gaussian
-  distributions and does not handle sparse matrices efficiently.
 """
 
 from __future__ import annotations
 
 import argparse
-import warnings
 from pathlib import Path
 
 import pandas as pd
@@ -165,6 +160,22 @@ def print_top_tfidf_features(model: Pipeline, n: int = 15) -> None:
     print("=" * 60)
     print(df.nsmallest(n, "delta")[["term", "delta"]].to_string(index=False))
 
+    positive_delta = df[df["delta"] > 0]["delta"]
+    total_signal   = positive_delta.sum()
+ 
+    print("\n" + "=" * 60)
+    print("CONCENTRATION OF KEYWORDS")
+    print("=" * 60)
+    print(f"\nVocabulary size: {len(df):,}")
+    print(f"Terms with positive delta (more common in phishing than in regular emails): {len(positive_delta):,}")
+    print(f"Sum of all positive delta: {total_signal:.4f}")
+    print()
+ 
+    for top_n in [5, 10, 20, 50, 100]:
+        top_signal = df.nlargest(top_n, "delta")["delta"].sum()
+        pct = top_signal / total_signal * 100
+        print(f"Top {top_n:4d} terms account for {pct:5.1f}% of total signal")
+
 
 def main() -> None:
     parser = argparse.ArgumentParser()
@@ -193,11 +204,11 @@ def main() -> None:
     X_train = train_df["text_input"]
     y_train = train_df["label"].values
 
-    X_val   = val_df["text_input"]
-    y_val   = val_df["label"].values
+    X_val = val_df["text_input"]
+    y_val = val_df["label"].values
 
-    X_test  = test_df["text_input"]
-    y_test  = test_df["label"].values
+    X_test = test_df["text_input"]
+    y_test = test_df["label"].values
 
     model = Pipeline([
         ("tfidf", TfidfVectorizer(
@@ -217,11 +228,11 @@ def main() -> None:
     train_pred = model.predict(X_train)
     train_prob = model.predict_proba(X_train)[:, 1]
 
-    val_pred   = model.predict(X_val)
-    val_prob   = model.predict_proba(X_val)[:, 1]
+    val_pred = model.predict(X_val)
+    val_prob = model.predict_proba(X_val)[:, 1]
 
-    test_pred  = model.predict(X_test)
-    test_prob  = model.predict_proba(X_test)[:, 1]
+    test_pred = model.predict(X_test)
+    test_prob = model.predict_proba(X_test)[:, 1]
 
     print_metrics_block("TRAIN", y_train, train_pred, train_prob)
     print_metrics_block("VAL",   y_val,   val_pred,   val_prob)
