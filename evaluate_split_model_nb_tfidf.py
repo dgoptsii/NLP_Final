@@ -10,6 +10,7 @@ GaussianNB assumes gaussian distributions and does not handle sparse matrices we
 from __future__ import annotations
 
 import argparse
+import pickle
 from pathlib import Path
 
 import pandas as pd
@@ -224,6 +225,12 @@ def main() -> None:
     ])
 
     model.fit(X_train, y_train)
+
+    # Save trained model for stress testing
+    model_path = Path("./pkl_models/nb_tfidf.pkl")
+    model_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(model_path, "wb") as f:
+        pickle.dump(model, f)
 
     train_pred = model.predict(X_train)
     train_prob = model.predict_proba(X_train)[:, 1]
