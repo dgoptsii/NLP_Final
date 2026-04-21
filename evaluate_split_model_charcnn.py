@@ -303,7 +303,7 @@ def main() -> None:
     print("TRAINING")
     print("=" * 60)
 
-    best_val_f1 = 0.0
+    best_val_recall = 0.0
     best_state = None
 
     for epoch in range(1, args.epochs + 1):
@@ -312,18 +312,18 @@ def main() -> None:
         val_pred, val_prob = predict(model, val_loader, device)
         val_f1 = f1_score(val_df["label"].values, val_pred, zero_division=0)
         val_acc = accuracy_score(val_df["label"].values, val_pred)
+        val_recall = recall_score(val_df["label"].values, val_pred, zero_division=0)
 
         print(f"Epoch {epoch:3d}/{args.epochs}  loss={train_loss:.4f}  "
               f"val_acc={val_acc:.4f}  val_f1={val_f1:.4f}")
 
-        # Save best model by val F1
-        if val_f1 > best_val_f1:
-            best_val_f1 = val_f1
-            best_state  = {k: v.clone() for k, v in model.state_dict().items()}
-
-    # Restore best model
+        # Save best checkpoint by recall
+        if val_recall > best_val_recall:
+            best_val_recall = val_recall
+            best_state      = {k: v.clone() for k, v in model.state_dict().items()}
+ 
     model.load_state_dict(best_state)
-    print(f"\nBest val F1: {best_val_f1:.4f} — using this checkpoint for evaluation.")
+    print(f"\nBest recall: {best_val_recall:.4f} (checkpoint)")
 
     model_path = Path("./pkl_models/char_cnn.pkl")
     model_path.parent.mkdir(parents=True, exist_ok=True)
