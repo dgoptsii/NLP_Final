@@ -325,6 +325,11 @@ def main() -> None:
     model.load_state_dict(best_state)
     print(f"\nBest val F1: {best_val_f1:.4f} — using this checkpoint for evaluation.")
 
+    model_path = Path("./pkl_models/char_cnn.pkl")
+    model_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(model_path, "wb") as f:
+        pickle.dump({"model_state": best_state, "args": vars(args)}, f)
+
     # Final evaluation
     train_pred, train_prob = predict(model, train_loader, device)
     val_pred, val_prob   = predict(model, val_loader,   device)
