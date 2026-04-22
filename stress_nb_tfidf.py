@@ -3,32 +3,12 @@ from __future__ import annotations
 
 import argparse
 import pickle
-import random
 from pathlib import Path
 
 import pandas as pd
 from sklearn.metrics import recall_score, f1_score, accuracy_score
 
 MODEL_PATH = Path("./pkl_models/nb_tfidf.pkl")
-
-FEATURE_COLUMNS = [
-    "char_len",
-    "token_len",
-    "subject_len",
-    "num_urls",
-    "num_emails",
-    "num_domains",
-    "num_exclamation",
-    "num_upper_tokens",
-    "keyword_hits",
-    "num_attachments",
-    "has_form_tag",
-    "has_script_tag",
-    "has_iframe_tag",
-    "has_ip_url",
-    "has_external_links",
-]
-
 
 def load_test(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path)
