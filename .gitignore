@@ -13,3 +13,7 @@ data/raw/
 # *.csv
 *.tar
 # *.json
+
+
+# Env files
+.DS_Store
