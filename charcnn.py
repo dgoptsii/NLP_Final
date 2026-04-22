@@ -218,11 +218,14 @@ def print_metrics_block(name: str, y_true, y_pred, y_prob) -> None:
     print("=" * 60)
     print(f"Accuracy:             {metrics['accuracy']:.4f}")
     print(f"Balanced accuracy:    {metrics['balanced_accuracy']:.4f}")
+    print(f"Precision:            {metrics['precision']:.4f}")
+    print(f"Recall / Sensitivity: {metrics['recall']:.4f}")
     print(f"Specificity:          {metrics['specificity']:.4f}")
     print(f"F1 score:             {metrics['f1']:.4f}")
     print(f"ROC AUC:              {metrics['roc_auc']:.4f}")
     print(f"PR AUC:               {metrics['pr_auc']:.4f}")
     print(f"Matthews corrcoef:    {metrics['mcc']:.4f}")
+
 
     print("\nClassification report:")
     print(classification_report(y_true, y_pred, digits=4, zero_division=0))
@@ -248,6 +251,66 @@ def print_error_analysis(name: str, df: pd.DataFrame, y_pred) -> None:
     if len(fp) > 0:
         print(fp["source"].value_counts().to_string())
 
+#https://arxiv.org/abs/1312.6034
+def compute_saliency(model: CharCNN, text: str, max_chars: int, device: torch.device) -> list[tuple[str, float]]:
+    model.eval()
+    x = text_to_tensor(text, max_chars).unsqueeze(0).to(device)
+    emb = model.embedding(x) 
+    emb.retain_grad()
+ 
+    pooled = [model.relu(conv(emb.permute(0, 2, 1))).max(dim=2).values
+              for conv in model.convs]
+    logits = model.fc(model.dropout(torch.cat(pooled, dim=1)))
+ 
+    model.zero_grad()
+    logits[0, 1].backward()
+ 
+    char_saliency = emb.grad[0].norm(dim=1).detach().cpu().numpy()  # (seq_len,)
+
+    chars = list(text[:max_chars])
+    words = text[:max_chars].split()
+    result = []
+    char_idx = 0
+ 
+    for word in words:
+        while char_idx < len(chars) and chars[char_idx] == " ":
+            char_idx += 1
+        scores = char_saliency[char_idx: char_idx + len(word)]
+        result.append((word, float(scores.mean()) if len(scores) > 0 else 0.0))
+        char_idx += len(word)
+ 
+    return sorted(result, key=lambda x: x[1], reverse=True)
+ 
+ 
+def print_saliency(model: CharCNN, test_df: pd.DataFrame, max_chars: int,device: torch.device) -> None:
+    print("\n" + "=" * 60)
+    print("AGGREGATED SALIENCY (test set)")
+    print("=" * 60)
+
+    texts     = test_df["text_input"].tolist()
+    test_pred, _ = predict(model, DataLoader(
+        EmailDataset(test_df, max_chars), batch_size=32, shuffle=False
+    ), device)
+
+    for class_label, class_name in [(1, "PHISHING"), (0, "LEGIT")]:
+        indices     = [i for i, p in enumerate(test_pred) if p == class_label]
+        word_counts: dict[str, int] = {}
+
+        for i, idx in enumerate(indices):
+            for word, _ in compute_saliency(model, texts[idx], max_chars, device)[:10]:
+                word = word.lower().strip(".,!?\"'")
+                if len(word) > 1:
+                    word_counts[word] = word_counts.get(word, 0) + 1
+
+        sorted_words = sorted(word_counts.items(), key=lambda x: x[1], reverse=True)
+        total = len(indices)
+
+        print(f"\n  Top 10 words: {class_name}")
+        print(f"  {'Word':<25} {'Count':>8} {'% of emails':>12}")
+        print("  " + "-" * 47)
+        for word, count in sorted_words[:10]:
+            print(f"  {word:<25} {count:>8}  {count / total * 100:>10.1f}%")
+
 
 # Main
 
@@ -256,14 +319,15 @@ def main() -> None:
     parser.add_argument("--train",       type=Path,  required=True)
     parser.add_argument("--val",         type=Path,  required=True)
     parser.add_argument("--test",        type=Path,  required=True)
-    parser.add_argument("--max-chars",   type=int,   default=1024)
-    parser.add_argument("--epochs",      type=int,   default=7)
-    parser.add_argument("--batch-size",  type=int,   default=64)
-    parser.add_argument("--lr",          type=float, default=1e-3)
-    parser.add_argument("--embed-dim",   type=int,   default=64)
-    parser.add_argument("--num-filters", type=int,   default=128)
-    parser.add_argument("--dropout",     type=float, default=0.5)
-    parser.add_argument("--random-seed", type=int,   default=42)
+    parser.add_argument("--max-chars",    type=int,   default=1024)
+    parser.add_argument("--epochs",       type=int,   default=7)
+    parser.add_argument("--batch-size",   type=int,   default=64)
+    parser.add_argument("--lr",           type=float, default=1e-3)
+    parser.add_argument("--embed-dim",    type=int,   default=64)
+    parser.add_argument("--num-filters",  type=int,   default=512)
+    parser.add_argument("--dropout",      type=float, default=0.5)
+    parser.add_argument("--random-seed",  type=int,   default=42)
+    parser.add_argument("--kernel-sizes", type=int,   nargs="+", default=[5, 7, 9])
     args = parser.parse_args()
 
     torch.manual_seed(args.random_seed)
@@ -290,7 +354,7 @@ def main() -> None:
     test_loader = DataLoader(EmailDataset(test_df,  args.max_chars), batch_size=args.batch_size, shuffle=False)
 
     # Model
-    model = CharCNN(vocab_size=VOCAB_SIZE,embed_dim=args.embed_dim,num_filters=args.num_filters,dropout=args.dropout,).to(device)
+    model = CharCNN(vocab_size=VOCAB_SIZE,embed_dim=args.embed_dim,num_filters=args.num_filters,kernel_sizes=args.kernel_sizes,dropout=args.dropout,).to(device)
 
     total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Model parameters: {total_params:,}")
@@ -331,7 +395,8 @@ def main() -> None:
         pickle.dump({"model_state": best_state, "args": vars(args)}, f)
 
     # Final evaluation
-    train_pred, train_prob = predict(model, train_loader, device)
+    train_eval_loader = DataLoader(EmailDataset(train_df, args.max_chars),batch_size=args.batch_size, shuffle=False)
+    train_pred, train_prob = predict(model, train_eval_loader, device)
     val_pred, val_prob   = predict(model, val_loader,   device)
     test_pred, test_prob  = predict(model, test_loader,  device)
 
@@ -342,6 +407,8 @@ def main() -> None:
     print_error_analysis("TRAIN",train_df, train_pred)
     print_error_analysis("VAL",val_df, val_pred)
     print_error_analysis("TEST",test_df, test_pred)
+
+    print_saliency(model, test_df, args.max_chars, device)
 
 
 if __name__ == "__main__":
