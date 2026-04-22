@@ -1,0 +1,112 @@
+
+======================================================================
+  CHARACTER-LEVEL CNN — RANDOM HYPERPARAMETER SEARCH
+======================================================================
+  Device    : cpu
+  Trials    : 20
+  Epochs    : 10 per trial
+  Val set   : data/processed/splits/val.csv
+======================================================================
+
+[Trial  1/20]  max_chars=5000  filters=128  dropout=0.3  kernels=[5, 7, 9]  lr=0.001
+           val_recall=0.9828  val_f1=0.9913  val_acc=0.9914  (1258s)
+
+[Trial  2/20]  max_chars=1024  filters=128  dropout=0.7  kernels=[3, 5, 7]  lr=0.001
+           val_recall=0.9828  val_f1=0.9884  val_acc=0.9885  (176s)
+
+[Trial  3/20]  max_chars=5000  filters=256  dropout=0.3  kernels=[3, 5, 7]  lr=0.001
+           val_recall=0.9828  val_f1=0.9913  val_acc=0.9914  (1797s)
+
+[Trial  4/20]  max_chars=1024  filters=128  dropout=0.7  kernels=[3, 5, 7]  lr=0.001
+           val_recall=0.9828  val_f1=0.9884  val_acc=0.9885  (184s)
+
+[Trial  5/20]  max_chars=5000  filters=512  dropout=0.7  kernels=[3, 5]  lr=0.001
+           val_recall=0.9828  val_f1=0.9799  val_acc=0.9799  (1930s)
+
+[Trial  6/20]  max_chars=2048  filters=512  dropout=0.5  kernels=[3, 5, 7]  lr=0.001
+           val_recall=0.9885  val_f1=0.9942  val_acc=0.9943  (1326s)
+
+[Trial  7/20]  max_chars=5000  filters=256  dropout=0.5  kernels=[5, 7, 9]  lr=0.001
+           val_recall=0.9828  val_f1=0.9884  val_acc=0.9885  (2126s)
+
+[Trial  8/20]  max_chars=1024  filters=256  dropout=0.3  kernels=[3, 5, 7]  lr=0.0001
+           val_recall=0.9483  val_f1=0.9735  val_acc=0.9741  (369s)
+
+[Trial  9/20]  max_chars=1024  filters=256  dropout=0.5  kernels=[5, 7, 9]  lr=0.001
+           val_recall=0.9885  val_f1=0.9690  val_acc=0.9684  (453s)
+
+[Trial 10/20]  max_chars=5000  filters=256  dropout=0.7  kernels=[3, 5, 7]  lr=0.0001
+           val_recall=0.9080  val_f1=0.9489  val_acc=0.9511  (1752s)
+
+[Trial 11/20]  max_chars=1024  filters=512  dropout=0.5  kernels=[5, 7, 9]  lr=0.001
+           val_recall=0.9885  val_f1=0.9942  val_acc=0.9943  (855s)
+
+[Trial 12/20]  max_chars=5000  filters=128  dropout=0.3  kernels=[3, 7]  lr=0.0001
+           val_recall=0.9368  val_f1=0.9645  val_acc=0.9655  (682s)
+
+[Trial 13/20]  max_chars=1024  filters=128  dropout=0.3  kernels=[3, 5]  lr=0.0001
+           val_recall=0.8966  val_f1=0.8864  val_acc=0.8851  (102s)
+
+[Trial 14/20]  max_chars=2048  filters=512  dropout=0.5  kernels=[3, 7]  lr=0.0001
+           val_recall=0.9195  val_f1=0.9581  val_acc=0.9598  (1002s)
+
+[Trial 15/20]  max_chars=2048  filters=128  dropout=0.7  kernels=[5, 7, 9]  lr=0.001
+           val_recall=0.9770  val_f1=0.9855  val_acc=0.9856  (551s)
+
+[Trial 16/20]  max_chars=5000  filters=512  dropout=0.3  kernels=[3, 7]  lr=0.001
+           val_recall=0.9885  val_f1=0.9005  val_acc=0.8908  (2686s)
+
+[Trial 17/20]  max_chars=2048  filters=256  dropout=0.5  kernels=[3, 7]  lr=0.0001
+           val_recall=0.9195  val_f1=0.9581  val_acc=0.9598  (562s)
+
+[Trial 18/20]  max_chars=1024  filters=128  dropout=0.3  kernels=[5, 7, 9]  lr=0.0001
+           val_recall=0.9425  val_f1=0.9704  val_acc=0.9713  (226s)
+
+[Trial 19/20]  max_chars=2048  filters=128  dropout=0.3  kernels=[5, 7, 9]  lr=0.001
+           val_recall=0.9828  val_f1=0.9913  val_acc=0.9914  (516s)
+
+[Trial 20/20]  max_chars=5000  filters=256  dropout=0.5  kernels=[3, 5]  lr=0.001
+           val_recall=0.9828  val_f1=0.9771  val_acc=0.9770  (1236s)
+
+
+======================================================================
+  RESULTS (Sorted by recall)
+======================================================================
+ trial  val_recall   val_f1  val_acc  val_roc_auc  max_chars  num_filters  dropout kernel_sizes     lr
+    11    0.988506 0.994220 0.994253     0.997523       1024          512      0.5    [5, 7, 9] 0.0010
+     9    0.988506 0.969014 0.968391     0.992337       1024          256      0.5    [5, 7, 9] 0.0010
+    16    0.988506 0.900524 0.890805     0.993130       5000          512      0.3       [3, 7] 0.0010
+     6    0.988506 0.994220 0.994253     0.994220       2048          512      0.5    [3, 5, 7] 0.0010
+    19    0.982759 0.991304 0.991379     0.996466       2048          128      0.3    [5, 7, 9] 0.0010
+     2    0.982759 0.988439 0.988506     0.997391       1024          128      0.7    [3, 5, 7] 0.0010
+     1    0.982759 0.991304 0.991379     0.996829       5000          128      0.3    [5, 7, 9] 0.0010
+     7    0.982759 0.988439 0.988506     0.995904       5000          256      0.5    [5, 7, 9] 0.0010
+     5    0.982759 0.979943 0.979885     0.995475       5000          512      0.7       [3, 5] 0.0010
+     4    0.982759 0.988439 0.988506     0.997391       1024          128      0.7    [3, 5, 7] 0.0010
+     3    0.982759 0.991304 0.991379     0.996796       5000          256      0.3    [3, 5, 7] 0.0010
+    20    0.982759 0.977143 0.977011     0.996069       5000          256      0.5       [3, 5] 0.0010
+    15    0.977011 0.985507 0.985632     0.997820       2048          128      0.7    [5, 7, 9] 0.0010
+     8    0.948276 0.973451 0.974138     0.996103       1024          256      0.3    [3, 5, 7] 0.0001
+    18    0.942529 0.970414 0.971264     0.994781       1024          128      0.3    [5, 7, 9] 0.0001
+    12    0.936782 0.964497 0.965517     0.993394       5000          128      0.3       [3, 7] 0.0001
+    14    0.919540 0.958084 0.959770     0.995541       2048          512      0.5       [3, 7] 0.0001
+    17    0.919540 0.958084 0.959770     0.994880       2048          256      0.5       [3, 7] 0.0001
+    10    0.908046 0.948949 0.951149     0.991511       5000          256      0.7    [3, 5, 7] 0.0001
+    13    0.896552 0.886364 0.885057     0.961256       1024          128      0.3       [3, 5] 0.0001
+
+
+======================================================================
+  BEST CONFIGURATION
+======================================================================
+  val_recall  : 0.9885
+  val_f1      : 0.9942
+  val_acc     : 0.9943
+  val_roc_auc : 0.9975
+
+  max_chars   : 1024
+  num_filters : 512
+  dropout     : 0.5
+  kernel_sizes: [5, 7, 9]
+  lr          : 0.001
+
+======================================================================

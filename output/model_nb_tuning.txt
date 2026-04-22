@@ -1,0 +1,152 @@
+======================================================================
+  1. NB LEXICAL — EXHAUSTIVE SEARCH (var_smoothing)
+======================================================================
+  var_smoothing=1e-11  val_recall=0.6092  val_f1=0.7439  val_acc=0.7902
+  var_smoothing=1e-09  val_recall=0.7759  val_f1=0.8599  val_acc=0.8736
+  var_smoothing=1e-07  val_recall=0.9138  val_f1=0.8933  val_acc=0.8908
+  var_smoothing=1e-05  val_recall=0.8218  val_f1=0.8487  val_acc=0.8534
+  var_smoothing=1e-03  val_recall=0.9138  val_f1=0.7447  val_acc=0.6868
+  var_smoothing=1e-01  val_recall=0.9483  val_f1=0.7432  val_acc=0.6724
+
+
+  RESULTS — NB LEXICAL (sorted by val_recall)
+ var_smoothing  val_recall   val_f1  val_acc  val_roc_auc
+  1.000000e-01    0.948276 0.743243 0.672414     0.770280
+  1.000000e-07    0.913793 0.893258 0.890805     0.949366
+  1.000000e-03    0.913793 0.744731 0.686782     0.815530
+  1.000000e-05    0.821839 0.848665 0.853448     0.916865
+  1.000000e-09    0.775862 0.859873 0.873563     0.943437
+  1.000000e-11    0.609195 0.743860 0.790230     0.942843
+
+======================================================================
+  BEST — NB LEXICAL
+======================================================================
+  var_smoothing  : 0.1
+  val_recall     : 0.9482758620689655
+  val_f1         : 0.7432432432432432
+  val_acc        : 0.6724137931034483
+  val_roc_auc    : 0.7702800898401374
+
+
+======================================================================
+  2. NB + TF-IDF — RANDOM SEARCH
+======================================================================
+
+  [Trial  1/25]  text=text_only         alpha=0.1  max_feat= 50000  ngram=(1, 2)  min_df=1
+             val_recall=0.9368  val_f1=0.9617  val_acc=0.9626  (1.0s)
+
+  [Trial  2/25]  text=text_only         alpha=0.5  max_feat= 50000  ngram=(1, 1)  min_df=5
+             val_recall=0.9080  val_f1=0.9433  val_acc=0.9454  (0.3s)
+
+  [Trial  3/25]  text=text_only         alpha=2.0  max_feat= 10000  ngram=(1, 1)  min_df=1
+             val_recall=0.9310  val_f1=0.9529  val_acc=0.9540  (0.4s)
+
+  [Trial  4/25]  text=text_only         alpha=0.5  max_feat= 50000  ngram=(1, 3)  min_df=1
+             val_recall=0.8793  val_f1=0.9301  val_acc=0.9339  (2.2s)
+
+  [Trial  5/25]  text=text_only         alpha=2.0  max_feat= 10000  ngram=(1, 2)  min_df=5
+             val_recall=0.8621  val_f1=0.9174  val_acc=0.9224  (1.0s)
+
+  [Trial  6/25]  text=text_and_subject  alpha=0.1  max_feat= 10000  ngram=(1, 3)  min_df=2
+             val_recall=0.8793  val_f1=0.9358  val_acc=0.9397  (1.9s)
+
+  [Trial  7/25]  text=text_and_subject  alpha=1.0  max_feat= 10000  ngram=(1, 1)  min_df=2
+             val_recall=0.9483  val_f1=0.9706  val_acc=0.9713  (0.3s)
+
+  [Trial  8/25]  text=text_only         alpha=0.1  max_feat= 30000  ngram=(1, 1)  min_df=2
+             val_recall=0.9425  val_f1=0.9647  val_acc=0.9655  (0.3s)
+
+  [Trial  9/25]  text=text_and_subject  alpha=1.0  max_feat= 10000  ngram=(1, 3)  min_df=2
+             val_recall=0.8563  val_f1=0.9226  val_acc=0.9282  (1.9s)
+
+  [Trial 10/25]  text=text_only         alpha=2.0  max_feat= 10000  ngram=(1, 3)  min_df=2
+             val_recall=0.8391  val_f1=0.9097  val_acc=0.9167  (1.8s)
+
+  [Trial 11/25]  text=text_and_subject  alpha=0.5  max_feat= 50000  ngram=(1, 1)  min_df=1
+             val_recall=0.9770  val_f1=0.9855  val_acc=0.9856  (0.3s)
+
+  [Trial 12/25]  text=text_only         alpha=1.0  max_feat= 10000  ngram=(1, 1)  min_df=1
+             val_recall=0.9253  val_f1=0.9499  val_acc=0.9511  (0.3s)
+
+  [Trial 13/25]  text=text_and_subject  alpha=1.0  max_feat= 30000  ngram=(1, 3)  min_df=2
+             val_recall=0.9080  val_f1=0.9518  val_acc=0.9540  (1.9s)
+
+  [Trial 14/25]  text=text_only         alpha=1.0  max_feat= 30000  ngram=(1, 1)  min_df=5
+             val_recall=0.9080  val_f1=0.9405  val_acc=0.9425  (0.3s)
+
+  [Trial 15/25]  text=text_and_subject  alpha=0.1  max_feat= 50000  ngram=(1, 3)  min_df=1
+             val_recall=0.9540  val_f1=0.9765  val_acc=0.9770  (2.1s)
+
+  [Trial 16/25]  text=text_only         alpha=0.5  max_feat= 30000  ngram=(1, 2)  min_df=2
+             val_recall=0.8966  val_f1=0.9398  val_acc=0.9425  (1.1s)
+
+  [Trial 17/25]  text=text_only         alpha=1.0  max_feat= 10000  ngram=(1, 1)  min_df=1
+             val_recall=0.9253  val_f1=0.9499  val_acc=0.9511  (0.3s)
+
+  [Trial 18/25]  text=text_and_subject  alpha=2.0  max_feat= 30000  ngram=(1, 1)  min_df=1
+             val_recall=0.9770  val_f1=0.9632  val_acc=0.9626  (0.4s)
+
+  [Trial 19/25]  text=text_and_subject  alpha=0.5  max_feat= 50000  ngram=(1, 2)  min_df=2
+             val_recall=0.9598  val_f1=0.9795  val_acc=0.9799  (1.1s)
+
+  [Trial 20/25]  text=text_and_subject  alpha=0.5  max_feat= 30000  ngram=(1, 1)  min_df=1
+             val_recall=0.9713  val_f1=0.9826  val_acc=0.9828  (0.4s)
+
+  [Trial 21/25]  text=text_and_subject  alpha=2.0  max_feat= 50000  ngram=(1, 2)  min_df=2
+             val_recall=0.9770  val_f1=0.9827  val_acc=0.9828  (1.1s)
+
+  [Trial 22/25]  text=text_only         alpha=0.5  max_feat= 50000  ngram=(1, 2)  min_df=1
+             val_recall=0.9195  val_f1=0.9524  val_acc=0.9540  (1.1s)
+
+  [Trial 23/25]  text=text_only         alpha=0.1  max_feat= 10000  ngram=(1, 3)  min_df=1
+             val_recall=0.8563  val_f1=0.9226  val_acc=0.9282  (2.0s)
+
+  [Trial 24/25]  text=text_and_subject  alpha=0.1  max_feat= 30000  ngram=(1, 2)  min_df=5
+             val_recall=0.9483  val_f1=0.9735  val_acc=0.9741  (1.1s)
+
+  [Trial 25/25]  text=text_and_subject  alpha=1.0  max_feat= 50000  ngram=(1, 1)  min_df=5
+             val_recall=0.9368  val_f1=0.9674  val_acc=0.9684  (0.4s)
+
+
+  RESULTS NB + TF-IDF (sorted by val_recall)
+ trial        text_mode  val_recall   val_f1  val_acc  val_roc_auc  alpha  max_features ngram_range  min_df
+    11 text_and_subject    0.977011 0.985507 0.985632     0.999042    0.5         50000      (1, 1)       1
+    21 text_and_subject    0.977011 0.982659 0.982759     0.998349    2.0         50000      (1, 2)       2
+    18 text_and_subject    0.977011 0.963173 0.962644     0.996829    2.0         30000      (1, 1)       1
+    20 text_and_subject    0.971264 0.982558 0.982759     0.999042    0.5         30000      (1, 1)       1
+    19 text_and_subject    0.959770 0.979472 0.979885     0.999571    0.5         50000      (1, 2)       2
+    15 text_and_subject    0.954023 0.976471 0.977011     0.999670    0.1         50000      (1, 3)       1
+    24 text_and_subject    0.948276 0.973451 0.974138     0.999637    0.1         30000      (1, 2)       5
+     7 text_and_subject    0.948276 0.970588 0.971264     0.998382    1.0         10000      (1, 1)       2
+     8        text_only    0.942529 0.964706 0.965517     0.998382    0.1         30000      (1, 1)       2
+     1        text_only    0.936782 0.961652 0.962644     0.998778    0.1         50000      (1, 2)       1
+    25 text_and_subject    0.936782 0.967359 0.968391     0.998712    1.0         50000      (1, 1)       5
+     3        text_only    0.931034 0.952941 0.954023     0.994385    2.0         10000      (1, 1)       1
+    12        text_only    0.925287 0.949853 0.951149     0.996334    1.0         10000      (1, 1)       1
+    17        text_only    0.925287 0.949853 0.951149     0.996334    1.0         10000      (1, 1)       1
+    22        text_only    0.919540 0.952381 0.954023     0.997985    0.5         50000      (1, 2)       1
+     2        text_only    0.908046 0.943284 0.945402     0.997292    0.5         50000      (1, 1)       5
+    14        text_only    0.908046 0.940476 0.942529     0.996697    1.0         30000      (1, 1)       5
+    13 text_and_subject    0.908046 0.951807 0.954023     0.998976    1.0         30000      (1, 3)       2
+    16        text_only    0.896552 0.939759 0.942529     0.997556    0.5         30000      (1, 2)       2
+     6 text_and_subject    0.879310 0.935780 0.939655     0.998481    0.1         10000      (1, 3)       2
+     4        text_only    0.879310 0.930091 0.933908     0.997259    0.5         50000      (1, 3)       1
+     5        text_only    0.862069 0.917431 0.922414     0.992634    2.0         10000      (1, 2)       5
+     9 text_and_subject    0.856322 0.922601 0.928161     0.995904    1.0         10000      (1, 3)       2
+    23        text_only    0.856322 0.922601 0.928161     0.994253    0.1         10000      (1, 3)       1
+    10        text_only    0.839080 0.909657 0.916667     0.989100    2.0         10000      (1, 3)       2
+
+======================================================================
+  BEST NB + TF-IDF
+======================================================================
+  text_mode      : text_and_subject
+  alpha          : 0.5
+  max_features   : 50000
+  ngram_range    : (1, 1)
+  min_df         : 1
+  val_recall     : 0.9770114942528736
+  val_f1         : 0.9855072463768116
+  val_acc        : 0.985632183908046
+  val_roc_auc    : 0.9990421455938697
+
+ 

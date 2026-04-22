@@ -1,0 +1,5 @@
+
+Technique                             Recall       F1   Accuracy  Recall drop
+-------------------------------------------------------------------------------------
+  Original (no obfuscation)           0.9885   0.9829     0.9828            —  —
+  Obfuscation                         0.9828   0.9799     0.9799       0.58%

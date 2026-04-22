@@ -1,0 +1,144 @@
+
+============================================================
+DATASET SUMMARY
+============================================================
+TRAIN rows= 2782  labels={0: 1391, 1: 1391}
+VAL   rows=  348  labels={0: 174, 1: 174}
+TEST  rows=  348  labels={0: 174, 1: 174}
+
+============================================================
+TRAIN METRICS
+============================================================
+Accuracy:             0.6804
+Balanced accuracy:    0.6804
+Precision:            0.6187
+Recall / Sensitivity: 0.9403
+Specificity:          0.4206
+F1 score:             0.7464
+ROC AUC:              0.8006
+PR AUC:               0.7497
+Matthews corrcoef:    0.4224
+
+Classification report:
+              precision    recall  f1-score   support
+
+           0     0.8757    0.4206    0.5682      1391
+           1     0.6187    0.9403    0.7464      1391
+
+    accuracy                         0.6804      2782
+   macro avg     0.7472    0.6804    0.6573      2782
+weighted avg     0.7472    0.6804    0.6573      2782
+
+Confusion matrix:
+[[ 585  806]
+ [  83 1308]]
+
+============================================================
+VAL METRICS
+============================================================
+Accuracy:             0.6724
+Balanced accuracy:    0.6724
+Precision:            0.6111
+Recall / Sensitivity: 0.9483
+Specificity:          0.3966
+F1 score:             0.7432
+ROC AUC:              0.7703
+PR AUC:               0.7161
+Matthews corrcoef:    0.4134
+
+Classification report:
+              precision    recall  f1-score   support
+
+           0     0.8846    0.3966    0.5476       174
+           1     0.6111    0.9483    0.7432       174
+
+    accuracy                         0.6724       348
+   macro avg     0.7479    0.6724    0.6454       348
+weighted avg     0.7479    0.6724    0.6454       348
+
+Confusion matrix:
+[[ 69 105]
+ [  9 165]]
+
+============================================================
+TEST METRICS
+============================================================
+Accuracy:             0.6437
+Balanced accuracy:    0.6437
+Precision:            0.5906
+Recall / Sensitivity: 0.9368
+Specificity:          0.3506
+F1 score:             0.7244
+ROC AUC:              0.7556
+PR AUC:               0.6974
+Matthews corrcoef:    0.3547
+
+Classification report:
+              precision    recall  f1-score   support
+
+           0     0.8472    0.3506    0.4959       174
+           1     0.5906    0.9368    0.7244       174
+
+    accuracy                         0.6437       348
+   macro avg     0.7189    0.6437    0.6102       348
+weighted avg     0.7189    0.6437    0.6102       348
+
+Confusion matrix:
+[[ 61 113]
+ [ 11 163]]
+
+============================================================
+TRAIN ERROR ANALYSIS
+============================================================
+
+False Negatives (phishing predicted as legit): 83
+source
+nazario    83
+
+False Positives (legit predicted as phishing): 806
+source
+enron    806
+
+============================================================
+VAL ERROR ANALYSIS
+============================================================
+
+False Negatives (phishing predicted as legit): 9
+source
+nazario    9
+
+False Positives (legit predicted as phishing): 105
+source
+enron    105
+
+============================================================
+TEST ERROR ANALYSIS
+============================================================
+
+False Negatives (phishing predicted as legit): 11
+source
+nazario    11
+
+False Positives (legit predicted as phishing): 113
+source
+enron    113
+
+============================================================
+FEATURE MEANS PER CLASS (sorted by delta)
+============================================================
+           feature  mean_legit (0)  mean_phish (1)      delta
+          char_len     1012.258807     1477.884975 465.626168
+         token_len      165.833932      233.289001  67.455068
+       subject_len       34.657800       47.087707  12.429907
+      keyword_hits        1.194824       10.148095   8.953271
+          num_urls        0.855500        6.059669   5.204170
+       num_domains        0.397556        3.020129   2.622574
+has_external_links        0.266715        0.992092   0.725377
+        has_ip_url        0.002157        0.226456   0.224299
+    has_script_tag        0.000000        0.040259   0.040259
+   num_exclamation        1.074766        1.099928   0.025162
+      has_form_tag        0.000000        0.012940   0.012940
+   num_attachments        0.000000        0.006470   0.006470
+    has_iframe_tag        0.000000        0.002876   0.002876
+        num_emails        0.989935        0.120058  -0.869878
+  num_upper_tokens       12.299065        5.015816  -7.283249

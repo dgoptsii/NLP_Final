@@ -1,0 +1,156 @@
+
+============================================================
+DATASET SUMMARY
+============================================================
+TRAIN rows= 2782  labels={0: 1391, 1: 1391}
+VAL   rows=  348  labels={0: 174, 1: 174}
+TEST  rows=  348  labels={0: 174, 1: 174}
+TF-IDF max features: 50000
+MultinomialNB alpha: 1.0
+
+============================================================
+TRAIN METRICS
+============================================================
+Accuracy:             0.9921
+Balanced accuracy:    0.9921
+Precision:            0.9949
+Recall / Sensitivity: 0.9892
+Specificity:          0.9950
+F1 score:             0.9921
+ROC AUC:              0.9991
+PR AUC:               0.9992
+Matthews corrcoef:    0.9842
+
+Classification report:
+              precision    recall  f1-score   support
+
+           0     0.9893    0.9950    0.9921      1391
+           1     0.9949    0.9892    0.9921      1391
+
+    accuracy                         0.9921      2782
+   macro avg     0.9921    0.9921    0.9921      2782
+weighted avg     0.9921    0.9921    0.9921      2782
+
+Confusion matrix:
+[[1384    7]
+ [  15 1376]]
+
+============================================================
+VAL METRICS
+============================================================
+Accuracy:             0.9828
+Balanced accuracy:    0.9828
+Precision:            1.0000
+Recall / Sensitivity: 0.9655
+Specificity:          1.0000
+F1 score:             0.9825
+ROC AUC:              0.9992
+PR AUC:               0.9993
+Matthews corrcoef:    0.9661
+
+Classification report:
+              precision    recall  f1-score   support
+
+           0     0.9667    1.0000    0.9831       174
+           1     1.0000    0.9655    0.9825       174
+
+    accuracy                         0.9828       348
+   macro avg     0.9833    0.9828    0.9828       348
+weighted avg     0.9833    0.9828    0.9828       348
+
+Confusion matrix:
+[[174   0]
+ [  6 168]]
+
+============================================================
+TEST METRICS
+============================================================
+Accuracy:             0.9914
+Balanced accuracy:    0.9914
+Precision:            0.9886
+Recall / Sensitivity: 0.9943
+Specificity:          0.9885
+F1 score:             0.9914
+ROC AUC:              0.9985
+PR AUC:               0.9983
+Matthews corrcoef:    0.9828
+
+Classification report:
+              precision    recall  f1-score   support
+
+           0     0.9942    0.9885    0.9914       174
+           1     0.9886    0.9943    0.9914       174
+
+    accuracy                         0.9914       348
+   macro avg     0.9914    0.9914    0.9914       348
+weighted avg     0.9914    0.9914    0.9914       348
+
+Confusion matrix:
+[[172   2]
+ [  1 173]]
+
+============================================================
+TRAIN ERROR ANALYSIS
+============================================================
+
+False Negatives (phishing → predicted legit): 15
+source
+nazario    15
+
+False Positives (legit → predicted phishing): 7
+source
+enron    7
+
+============================================================
+VAL ERROR ANALYSIS
+============================================================
+
+False Negatives (phishing → predicted legit): 6
+source
+nazario    6
+
+False Positives (legit → predicted phishing): 0
+
+============================================================
+TEST ERROR ANALYSIS
+============================================================
+
+False Negatives (phishing → predicted legit): 1
+source
+nazario    1
+
+False Positives (legit → predicted phishing): 2
+source
+enron    2
+
+============================================================
+Most common words associated with the prediction (using LIME)
+============================================================
+
+  Top 10 words: PHISHING
+  Word                       Count  % of emails
+  ---------------------------------------------
+  account                       35        20.1%
+  your                          29        16.7%
+  bank                          22        12.6%
+  paypal                        19        10.9%
+  ebay                          15         8.6%
+  banking                       14         8.0%
+  and                           13         7.5%
+  third                         13         7.5%
+  fifth                         11         6.3%
+  this                          11         6.3%
+
+  Top 10 words: LEGIT
+  Word                       Count  % of emails
+  ---------------------------------------------
+  num                           60        34.5%
+  the                           23        13.2%
+  attached                      22        12.6%
+  meeting                       14         8.0%
+  know                          13         7.5%
+  thanks                        12         6.9%
+  image                         12         6.9%
+  market                        12         6.9%
+  call                          11         6.3%
+  list                          10         5.7%
