@@ -1,8 +1,8 @@
 import re
 import pandas as pd
 
-INPUT_FILE  = '../data/processed/splits/test.csv'
-OUTPUT_FILE = '../data/processed/splits/test_obfuscated_homograph.csv'
+INPUT_FILE  = 'data/processed/splits/test.csv'
+OUTPUT_FILE = 'data/processed/splits/test_obfuscated_homograph.csv'
 TEXT_COL    = 'text'
 SUBJECT_COL = 'subject'    # set to None to skip subject obfuscation
 

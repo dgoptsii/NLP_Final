@@ -14,3 +14,7 @@ data/raw/
 *.tar
 *.json
 *.DS_Store
+*__pycache__/
+*.pt
+*.log
+**/run_metadata.txt
