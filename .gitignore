@@ -10,10 +10,7 @@ data/raw/
 
 
 # Specific file types (extra safety)
-# *.csv
+*.csv
 *.tar
-# *.json
-
-
-# Env files
-.DS_Store
+*.json
+*.DS_Store
