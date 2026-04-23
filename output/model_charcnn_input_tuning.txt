@@ -1,0 +1,34 @@
+============================================================
+TEXT_ONLY
+============================================================
+Epoch 1/7  loss=3.9076  val_acc=0.8908  val_recall=0.8333
+  Epoch 2/7  loss=0.2101  val_acc=0.9684  val_recall=0.9368
+  Epoch 3/7  loss=0.1172  val_acc=0.9598  val_recall=0.9195
+  Epoch 4/7  loss=0.0702  val_acc=0.9713  val_recall=0.9425
+  Epoch 5/7  loss=0.0989  val_acc=0.9943  val_recall=0.9885
+  Epoch 6/7  loss=0.1135  val_acc=0.9914  val_recall=0.9828
+  Epoch 7/7  loss=0.0627  val_acc=0.9914  val_recall=0.9885
+  Best val recall: 0.9885
+  
+============================================================
+TEXT_FEATURES
+============================================================
+  Epoch 1/7  loss=0.4215  val_acc=0.9540  val_recall=0.9138
+  Epoch 2/7  loss=0.1365  val_acc=0.9511  val_recall=0.9023
+  Epoch 3/7  loss=0.0829  val_acc=0.9885  val_recall=0.9770
+  Epoch 4/7  loss=0.0582  val_acc=0.9741  val_recall=0.9483
+  Epoch 5/7  loss=0.0358  val_acc=0.9914  val_recall=0.9828
+  Epoch 6/7  loss=0.0295  val_acc=0.9914  val_recall=0.9828
+  Epoch 7/7  loss=0.0297  val_acc=0.9856  val_recall=0.9713
+  Best val recall: 0.9828
+
+============================================================
+COMPARISON
+============================================================
+
+  Variant                Recall  Precision       F1   Accuracy   ROC AUC
+  ----------------------------------------------------------------------
+  text_only              0.9943     0.9611   0.9774     0.9770    0.9994
+  text_features          0.9885     0.9773   0.9829     0.9828    0.9995
+
+  Best by recall: text_only (recall=0.9943)
