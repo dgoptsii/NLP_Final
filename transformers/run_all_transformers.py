@@ -651,10 +651,10 @@ def main():
     print("STARTING FULL TRANSFORMER PIPELINE", flush=True)
     print("=" * 100, flush=True)
 
-    # training_df = run_training_suite(args, results_dir, logs_dir)
+    training_df = run_training_suite(args, results_dir, logs_dir)
     training_df = load_existing_models(save_dir)
-    # run_obfuscation(results_dir, logs_dir)
-    # stress_df = run_stress_suite(training_df, args, results_dir)
+    run_obfuscation(results_dir, logs_dir)
+    stress_df = run_stress_suite(training_df, args, results_dir)
     _, lime_available = run_lime_suite(training_df, args, results_dir)
     build_report_tables(training_df, stress_df, results_dir)
 
